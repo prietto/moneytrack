@@ -1,0 +1,108 @@
+# generated: 2026-11-04
+# last_updated: 2026-11-04
+# project: moneytrack_app
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+
+# DEFINICIONES DE ESTADO:
+# ======================
+# Estado de Épica:
+#   - backlog: Épica aún no iniciada
+#   - in-progress: Épica en trabajo activo
+#   - done: Todas las historias de la épica completadas
+#
+# Transiciones de Épica:
+#   - backlog → in-progress: Automáticamente al crear la primera historia (vía create-story)
+#   - in-progress → done: Manualmente cuando todas las historias llegan a 'done'
+#
+# Estado de Historia:
+#   - backlog: La historia solo existe en el archivo de épicas
+#   - ready-for-dev: Archivo de historia creado en la carpeta de historias
+#   - in-progress: Desarrollador implementando activamente
+#   - review: Lista para code review (vía workflow code-review del Dev)
+#   - done: Historia completada
+#
+# Estado de Retrospectiva:
+#   - optional: Se puede realizar pero no es obligatoria
+#   - done: Retrospectiva completada
+#
+# Estado de Action Items:
+#   - open: Comprometido en una retrospectiva, aún no atendido
+#   - in-progress: En trabajo activo
+#   - done: Completado
+#
+# NOTAS DEL FLUJO:
+# ================
+# - La épica pasa a 'in-progress' automáticamente al crear su primera historia
+# - Las historias pueden trabajarse en paralelo si la capacidad lo permite
+# - El desarrollador normalmente crea la siguiente historia tras terminar la anterior, para incorporar aprendizajes
+# - El Dev mueve la historia a 'review' y luego ejecuta code-review (contexto fresco, idealmente otro LLM)
+# - La retrospectiva agrega sus action items a action_items; sprint-status muestra los abiertos
+
+generated: 2026-11-04
+last_updated: 2026-11-04
+project: moneytrack_app
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+
+development_status:
+  # Épica 1
+  epic-1: in-progress
+  1-1-proyecto-base-desde-la-plantilla-expo-sdk-57: review
+  1-2-acceso-protegido-diagnostico-y-error-amable: backlog
+  1-3-nucleo-de-calculo-reloj-hechos-y-estado-reactivo: backlog
+  1-4-configurar-pagos-saldo-inicial-y-colchon-y-ver-el-primer-dinero-libre: backlog
+  1-5-registrar-vehiculos-y-obligaciones-mensuales-y-anuales: backlog
+  1-6-presupuestos-esenciales-fondo-enduro-y-categorias-iniciales: backlog
+  1-7-deudas-deuda-objetivo-y-reserva-de-meta: backlog
+  1-8-asistente-de-primer-uso-y-ajustes: backlog
+  1-9-apk-release-firmado-e-instalado-en-el-celular: backlog
+  epic-1-retrospective: optional
+
+  # Épica 2
+  epic-2: backlog
+  2-1-registrar-un-gasto-manual-en-segundos: backlog
+  2-2-adelanto-de-un-gasto-previsto: backlog
+  2-3-confirmar-pagos-y-registrar-otros-ingresos: backlog
+  2-4-pagar-obligaciones-con-ya-pagamos: backlog
+  2-5-editar-y-borrar-movimientos-con-rastro-visible: backlog
+  2-6-cuadrar-contra-el-banco-e-historial-de-cuadres: backlog
+  epic-2-retrospective: optional
+
+  # Épica 3
+  epic-3: backlog
+  3-1-registrar-abonos-a-una-deuda: backlog
+  3-2-fecha-de-la-meta-proyectada-dia-de-libertad-y-meta-en-la-pantalla-principal: backlog
+  3-3-impacto-en-dias-al-registrar-un-gasto: backlog
+  3-4-ritmo-de-la-meta-y-aviso-al-confirmar-un-pago-o-cuadrar: backlog
+  3-5-meta-cumplida-o-vencida: backlog
+  epic-3-retrospective: optional
+
+  # Épica 4
+  epic-4: backlog
+  4-1-clave-de-ia-y-extractor-de-facturas: backlog
+  4-2-fotografiar-una-factura-y-confirmar-la-propuesta: backlog
+  4-3-fotos-sin-conexion-fallos-y-facturas-por-confirmar: backlog
+  epic-4-retrospective: optional
+
+  # Épica 5
+  epic-5: backlog
+  5-1-reglas-del-semaforo-en-el-nucleo: backlog
+  5-2-pantalla-puedo-veredicto-y-lo-compre: backlog
+  epic-5-retrospective: optional
+
+  # Épica 6
+  epic-6: backlog
+  6-1-sesion-de-pagos-agendada-con-notificacion: backlog
+  6-2-recordatorio-de-cuadre-y-vencimientos-anuales: backlog
+  epic-6-retrospective: optional
+
+  # Épica 7
+  epic-7: backlog
+  7-1-exportar-mis-datos-y-el-diagnostico-a-un-archivo: backlog
+  7-2-restaurar-desde-un-archivo: backlog
+  7-3-respaldo-automatico-en-mi-google-drive: backlog
+  epic-7-retrospective: optional
