@@ -3,26 +3,39 @@ import { eq } from 'drizzle-orm';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import migracionesDeLaApp from '../../../drizzle/migrations';
 import { rastro } from '../schema';
 import { crearBaseDePrueba } from './base-en-memoria';
 
-const journal = JSON.parse(
-  readFileSync(path.resolve(__dirname, '../../../drizzle/meta/_journal.json'), 'utf8'),
-) as { entries: unknown[] };
+const carpetaMigraciones = path.resolve(__dirname, '../../../drizzle');
+const journal = JSON.parse(readFileSync(path.join(carpetaMigraciones, 'meta/_journal.json'), 'utf8')) as {
+  entries: { idx: number; tag: string }[];
+};
+
+// Cada prueba registra aquí sus bases para cerrarlas aunque falle una aserción.
+const abiertas: (() => void)[] = [];
+function abrirBase() {
+  const base = crearBaseDePrueba();
+  abiertas.push(base.cerrar);
+  return base;
+}
+
+afterEach(() => {
+  abiertas.splice(0).forEach((cerrar) => cerrar());
+});
 
 describe('crearBaseDePrueba', () => {
   it('aplica todas las migraciones de drizzle/', () => {
-    const { sqlite, cerrar } = crearBaseDePrueba();
+    const { sqlite } = abrirBase();
     const { total } = sqlite.prepare('SELECT count(*) AS total FROM __drizzle_migrations').get() as {
       total: number;
     };
     expect(journal.entries.length).toBeGreaterThan(0);
     expect(total).toBe(journal.entries.length);
-    cerrar();
   });
 
   it('permite escribir y leer una fila de rastro', () => {
-    const { db, cerrar } = crearBaseDePrueba();
+    const { db } = abrirBase();
     const fila = {
       id: '1b4e28ba-2fa1-4d2b-883f-0016d3cca427',
       createdAt: '2026-11-04T12:00:00.000Z',
@@ -39,12 +52,11 @@ describe('crearBaseDePrueba', () => {
     const leida = db.select().from(rastro).where(eq(rastro.id, fila.id)).get();
 
     expect(leida).toEqual({ ...fila, deletedAt: null });
-    cerrar();
   });
 
   it('cada base es independiente', () => {
-    const a = crearBaseDePrueba();
-    const b = crearBaseDePrueba();
+    const a = abrirBase();
+    const b = abrirBase();
     a.db
       .insert(rastro)
       .values({
@@ -60,7 +72,23 @@ describe('crearBaseDePrueba', () => {
       })
       .run();
     expect(b.db.select().from(rastro).all()).toHaveLength(0);
-    a.cerrar();
-    b.cerrar();
+  });
+});
+
+// La app migra con drizzle/migrations.js (SQL incrustado por babel-plugin-inline-import)
+// y las pruebas migran desde la carpeta: este bloque evita que se desincronicen.
+describe('drizzle/migrations.js (lo que usa la app)', () => {
+  it('trae el mismo journal que drizzle/meta/_journal.json', () => {
+    expect(migracionesDeLaApp.journal).toEqual(journal);
+  });
+
+  it('trae exactamente una migración por entrada del journal, con el mismo SQL', () => {
+    const esperadas = Object.fromEntries(
+      journal.entries.map(({ idx, tag }) => [
+        `m${String(idx).padStart(4, '0')}`,
+        readFileSync(path.join(carpetaMigraciones, `${tag}.sql`), 'utf8'),
+      ]),
+    );
+    expect(migracionesDeLaApp.migrations).toEqual(esperadas);
   });
 });

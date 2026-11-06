@@ -4,7 +4,7 @@ baseline_commit: NO_VCS
 
 # Story 1.1: Proyecto base desde la plantilla Expo SDK 57
 
-Status: review
+Status: done
 
 <!-- Nota: la validación es opcional. Ejecutar validate-create-story para un control de calidad antes de dev-story. -->
 
@@ -93,6 +93,24 @@ para que cada historia siguiente se construya sobre una base consistente y verif
 - [x] **T11. Cierre**
   - [x] `npm run verificar` en verde.
   - [x] Llenar "Dev Agent Record": versiones exactas instaladas (expo, react-native, drizzle-orm, drizzle-kit, zod, jest, jest-expo, eslint, eslint-config-expo), el `engines` de Node verificado y la lista de archivos.
+
+### Review Findings
+
+- [x] [Review][Patch] AD-17 completo (decidido: cerrar todo): marcar los literales en ternarios, `&&` y concatenaciones dentro de los hijos JSX; prohibir strings en `title`, `placeholder`, `accessibilityLabel` y `accessibilityHint` y en el primer argumento de `Alert.alert`; aplicar la regla también a `src/components/**` [eslint.config.js:89]
+- [x] [Review][Patch] Quitar las dependencias de la plantilla que no se usan (`@expo/ui`, `expo-glass-effect`, `expo-symbols`, `expo-image`, `expo-device`, `expo-web-browser`, `expo-font`, `react-native-web`, `react-dom`) y la sección `web`; se queda la que exija expo-router (decidido: quitar todo) [package.json:6]
+- [x] [Review][Patch] AD-3: fuera de `src/data/` se puede importar `@/data/db`, `@/data/schema` (donde vive `rastro`), `expo-sqlite`, `better-sqlite3` y el helper `@/data/pruebas`, así que pantallas, hooks y servicios pueden escribir en la base sin pasar por commands [eslint.config.js:14]
+- [x] [Review][Patch] Huecos en las importaciones de domain: `./../data/x`, `../../src/data/x`, `import()` dinámico y `node:*` pasan; y una subcarpeta de domain llamada como una capa da un falso positivo. Usar `import/no-restricted-paths` con zonas, `ImportExpression` y `^node:` [eslint.config.js:29]
+- [x] [Review][Patch] Huecos de reloj, azar y red en domain: `globalThis.fetch`/`globalThis.Date`/`globalThis.Math.random`, `crypto.randomUUID`/`getRandomValues`, `performance.now`, `Temporal.Now` y el tipo `Date` (la spec pide `string` YYYY-MM-DD) [eslint.config.js:62]
+- [x] [Review][Patch] Ninguna prueba detecta que `drizzle/migrations.js` quede desincronizado de `_journal.json` o de los `.sql`: las pruebas migran desde la carpeta y la app desde `migrations.js` [src/data/pruebas/base-en-memoria.test.ts:1]
+- [x] [Review][Patch] `APP_VARIANT` con un valor desconocido (`prod`, `Release`) cae en dev sin aviso; debe fallar si viene definido y no es `dev` ni `release` [app.config.ts:5]
+- [x] [Review][Patch] `package.json` declara `"version": "1.0.0"`, que contradice AD-24 (versión solo en `app.config.ts`); quitar el campo [package.json:4]
+- [x] [Review][Patch] `eslint-config-expo` está en `dependencies` (T6 pide `--save-dev`) y `@types/node` llega solo de forma transitiva aunque `tsconfig` lo exige en `types` [package.json:8]
+- [x] [Review][Patch] Jest no mapea `@/assets/*`, que `tsconfig` sí define: lo resuelve a `src/assets` [jest.config.js:6]
+- [x] [Review][Patch] Las pruebas de la base no la cierran si falla una aserción (`cerrar()` va después de los `expect`); usar `afterEach` o `try/finally` [src/data/pruebas/base-en-memoria.test.ts:19]
+- [x] [Review][Patch] Documentación de la plantilla desactualizada: el README cita `npm run reset-project` y la carpeta `app/`; `AGENTS.md` dice que la configuración nativa va en `app.json`; la `LICENSE` es la MIT de Expo en una app privada [README.md:26]
+- [x] [Review][Defer] `openDatabaseSync` corre al importar el módulo, fuera de la pantalla de error, y un fallo de migración no se registra, no se puede reintentar y no tiene ErrorBoundary [src/data/db.ts:7] — deferred, lo cubre H1.2 (diagnóstico y error amable)
+- [x] [Review][Defer] `operacion` es enum solo en TypeScript; en SQL no hay `CHECK` [src/data/schema.ts:26] — deferred, pre-existing (comportamiento de drizzle; validar en commands o con Zod)
+- [x] [Review][Defer] El migrador de drizzle decide qué aplicar por el `when` del journal: una migración con fecha menor que la última aplicada se omite en silencio [drizzle/meta/_journal.json:1] — deferred, pre-existing (comportamiento de drizzle)
 
 ## Dev Notes
 
@@ -285,3 +303,4 @@ Artefactos BMAD:
 ## Change Log
 
 - 2026-11-04: Implementación de H1.1. Proyecto base Expo SDK 57 con `app.config.ts` y variantes dev/release, stack fijado (Drizzle 0.45, Zod 4.6), esquema con `rastro` y primera migración, ESLint con reglas de capas (más `no-restricted-syntax` para texto dentro de `<Text>`), Jest con base better-sqlite3 en memoria, `npm run verificar` y prebuild/instalación de ambas variantes verificados. Estado → review.
+- 2026-11-05: Code review (Blind Hunter, Edge Case Hunter, Acceptance Auditor). Aplicados 12 parches: AD-3 bloquea `@/data/db`, `@/data/schema`, `@/data/pruebas`, `expo-sqlite` y `better-sqlite3` fuera de `src/data/`; domain con `import/no-restricted-paths`, `import()`, `node:*`, `globalThis`, `crypto`, `performance`, `Temporal`, `Intl.DateTimeFormat` y el tipo `Date`; AD-17 extendido a expresiones, props visibles, `Alert` y `src/components/`; prueba de sincronía de `drizzle/migrations.js`; `APP_VARIANT` inválida detiene el build; sin dependencias de la plantilla ni sección `web`; `version` fuera de `package.json`; `eslint-config-expo` y `@types/node` en devDependencies; alias `@/assets` en Jest; cierre de bases con `afterEach`; README propio, `AGENTS.md` con `app.config.ts` y sin la LICENSE de Expo. `npm run verificar`: 103 pruebas en verde. 3 hallazgos diferidos en `deferred-work.md`. Estado → done.

@@ -1,8 +1,14 @@
 import type { ExpoConfig } from 'expo/config';
 
 // AD-16: dos variantes instalables a la vez. Sin APP_VARIANT se asume 'dev',
-// para que un run olvidadizo nunca toque la app con los datos reales.
-const variante = process.env.APP_VARIANT === 'release' ? 'release' : 'dev';
+// para que un run olvidadizo nunca toque la app con los datos reales. Un valor
+// desconocido (p. ej. 'prod' o 'Release') detiene el build en vez de caer en dev.
+const variantesValidas = ['dev', 'release'] as const;
+const varianteEnv = process.env.APP_VARIANT || undefined; // '' cuenta como sin definir
+if (varianteEnv !== undefined && !(variantesValidas as readonly string[]).includes(varianteEnv)) {
+  throw new Error(`APP_VARIANT='${varianteEnv}' no es válida: usa 'dev' o 'release'.`);
+}
+const variante = varianteEnv === 'release' ? 'release' : 'dev';
 const esRelease = variante === 'release';
 
 const paqueteBase = 'com.priettos.moneytrack';
@@ -29,10 +35,6 @@ export default (): ExpoConfig => ({
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
-  },
-  web: {
-    output: 'static',
-    favicon: './assets/images/favicon.png',
   },
   plugins: [
     'expo-router',

@@ -3,5 +3,6 @@ export const textosApp = {
   nombreApp: 'MoneyTrack',
   preparandoDatos: 'Preparando tus datos…',
   errorMigracion:
-    'No pude preparar tus datos. Cierra la app y ábrela de nuevo; si sigue igual, avísale al desarrollador.',
+    'No pude preparar tus datos. Toca Reintentar; si sigue igual, cierra la app, ábrela de nuevo y, si no se arregla, avísale al desarrollador.',
+  reintentar: 'Reintentar',
 } as const;

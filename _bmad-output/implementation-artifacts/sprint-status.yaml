@@ -1,5 +1,5 @@
 # generated: 2026-11-04
-# last_updated: 2026-11-04
+# last_updated: 2026-11-05
 # project: moneytrack_app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - La retrospectiva agrega sus action items a action_items; sprint-status muestra los abiertos
 
 generated: 2026-11-04
-last_updated: 2026-11-04
+last_updated: 2026-11-05
 project: moneytrack_app
 project_key: NOKEY
 tracking_system: file-system
@@ -51,9 +51,9 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 development_status:
   # Épica 1
   epic-1: in-progress
-  1-1-proyecto-base-desde-la-plantilla-expo-sdk-57: review
-  1-2-acceso-protegido-diagnostico-y-error-amable: backlog
-  1-3-nucleo-de-calculo-reloj-hechos-y-estado-reactivo: backlog
+  1-1-proyecto-base-desde-la-plantilla-expo-sdk-57: done
+  1-2-acceso-protegido-diagnostico-y-error-amable: done
+  1-3-nucleo-de-calculo-reloj-hechos-y-estado-reactivo: done
   1-4-configurar-pagos-saldo-inicial-y-colchon-y-ver-el-primer-dinero-libre: backlog
   1-5-registrar-vehiculos-y-obligaciones-mensuales-y-anuales: backlog
   1-6-presupuestos-esenciales-fondo-enduro-y-categorias-iniciales: backlog
