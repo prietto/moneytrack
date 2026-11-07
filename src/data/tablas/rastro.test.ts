@@ -85,6 +85,23 @@ describe('editarConRastro', () => {
     expect(JSON.parse(filas[0].despues ?? 'null')).toEqual(despues);
   });
 
+  it('sin cambios reales no escribe: ni update, ni updatedAt, ni rastro', () => {
+    const { db, ctx } = preparar();
+    const fila = db.transaction((tx) => editarConRastro(tx, ctx, pruebaRastro, 'a', { nombre: 'Arriendo' }));
+
+    const intacta = { id: 'a', createdAt: CREADA, updatedAt: CREADA, deletedAt: null, nombre: 'Arriendo' };
+    expect(fila).toEqual(intacta);
+    expect(db.select().from(pruebaRastro).where(eq(pruebaRastro.id, 'a')).get()).toEqual(intacta);
+    expect(db.select().from(rastro).all()).toHaveLength(0);
+  });
+
+  it('sin cambios, igual lanza filaNoEncontrada si la fila no está vigente', () => {
+    const { db, ctx } = preparar();
+    expect(() => db.transaction((tx) => editarConRastro(tx, ctx, pruebaRastro, 'borrada', { nombre: 'Vieja' }))).toThrow(
+      'filaNoEncontrada',
+    );
+  });
+
   it('no toca las demás filas', () => {
     const { db, ctx } = preparar();
     db.transaction((tx) => editarConRastro(tx, ctx, pruebaRastro, 'a', { nombre: 'X' }));

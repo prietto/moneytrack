@@ -65,10 +65,18 @@ function leer<T extends TablaConComunes>(tx: Transaccion, tabla: T, id: string):
     .get() as T['$inferSelect'];
 }
 
+/** Algún valor de `cambios` difiere del de la fila (comparación por valor; las columnas son escalares). */
+function hayCambios(fila: Record<string, unknown>, cambios: Record<string, unknown>): boolean {
+  return Object.entries(cambios).some(([columna, valor]) => valor !== undefined && !Object.is(fila[columna], valor));
+}
+
 /**
  * Edita una fila vigente y registra el rastro (antes y después completos) en
  * la misma transacción. Lanza `filaNoEncontrada` si no existe o está borrada.
  * Devuelve la fila nueva.
+ *
+ * Si `cambios` no altera ninguna columna, no escribe nada: ni `update`, ni
+ * `updatedAt`, ni rastro. Devuelve la fila tal como está.
  */
 export function editarConRastro<T extends TablaConComunes>(
   tx: Transaccion,
@@ -78,6 +86,7 @@ export function editarConRastro<T extends TablaConComunes>(
   cambios: Partial<Omit<T['$inferInsert'], 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>>,
 ): T['$inferSelect'] {
   const antes = leerVigente(tx, tabla, id);
+  if (!hayCambios(antes as Record<string, unknown>, cambios as Record<string, unknown>)) return antes;
   tx.update(tabla)
     .set({ ...cambios, updatedAt: ctx.ahora } as SQLiteUpdateSetSource<T>)
     .where(eq(tabla.id, id))

@@ -165,6 +165,15 @@ describe('reglas de capas en ESLint', () => {
         "import { ejecutarComando } from '@/data/ejecutar-comando';\nexport const x = ejecutarComando;",
       ],
       ['@/data/cambios', "import { avisarCambio } from '@/data/cambios';\nexport const x = avisarCambio;"],
+      [
+        '@/data/commands/definir-comando',
+        "import { definirComando } from '@/data/commands/definir-comando';\nexport const x = definirComando;",
+      ],
+      [
+        'data/commands/definir-comando relativo',
+        "import { definirComando } from '../data/commands/definir-comando';\nexport const x = definirComando;",
+      ],
+      ['@/data/contexto', "import type { Comando } from '@/data/contexto';\nexport type X = Comando<void>;"],
     ];
 
     it.each(importaciones)('falla en src/app/ al importar %s', async (_caso, codigo) => {
@@ -177,6 +186,24 @@ describe('reglas de capas en ESLint', () => {
 
     it('src/hooks/use-comando.ts sí puede importar @/data/ejecutar-comando', async () => {
       const codigo = "import { ejecutarComando } from '@/data/ejecutar-comando';\nexport const x = ejecutarComando;";
+      expect(await reglasQueFallan(codigo, 'src/hooks/use-comando.ts')).toEqual([]);
+    });
+
+    it('las pantallas sí pueden importar un comando de data/commands', async () => {
+      const codigo =
+        "import { configurarPagos } from '@/data/commands/configurar-pagos';\nexport const x = configurarPagos;";
+      expect(await reglasQueFallan(codigo, 'src/app/x.tsx')).toEqual([]);
+    });
+
+    it('en src/app/ sigue fallando drizzle-orm junto a un comando (no se perdió AD-3)', async () => {
+      const codigo =
+        "import { eq } from 'drizzle-orm';\nimport { configurarPagos } from '@/data/commands/configurar-pagos';\nexport const x = [eq, configurarPagos];";
+      expect(await reglasQueFallan(codigo, 'src/app/x.tsx')).toContain('no-restricted-imports');
+    });
+
+    it('src/hooks/use-comando.ts sí puede importar definir-comando', async () => {
+      const codigo =
+        "import type { ComandoDefinido } from '@/data/commands/definir-comando';\nexport type X = ComandoDefinido<void>;";
       expect(await reglasQueFallan(codigo, 'src/hooks/use-comando.ts')).toEqual([]);
     });
 

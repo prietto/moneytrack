@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-/** Botón principal de las pantallas de sistema (bloqueo, errores). */
+import { colores } from './tema';
+
+/** Botón principal: pantallas de sistema (bloqueo, errores), formularios y accesos. */
 export function Boton({
   texto,
   onPress,
@@ -29,10 +31,10 @@ const estilos = StyleSheet.create({
     minWidth: 160,
     paddingHorizontal: 24,
     borderRadius: 12,
-    backgroundColor: '#1F6F4A',
+    backgroundColor: colores.primario,
     alignItems: 'center',
     justifyContent: 'center',
   },
   atenuado: { opacity: 0.5 },
-  texto: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+  texto: { color: colores.textoSobrePrimario, fontSize: 16, fontWeight: '600' },
 });

@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { textosError } from '@/textos/errores';
 
 import { Boton } from './boton';
+import { colores } from './tema';
 
 /**
  * Error amable (UX-DR13): voz del socio, sin detalles técnicos. Nunca recibe
@@ -27,8 +28,8 @@ const estilos = StyleSheet.create({
     justifyContent: 'center',
     gap: 16,
     padding: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colores.fondo,
   },
-  titulo: { fontSize: 20, fontWeight: '600', textAlign: 'center', color: '#1A1A1A' },
-  mensaje: { fontSize: 16, textAlign: 'center', color: '#1A1A1A' },
+  titulo: { fontSize: 20, fontWeight: '600', textAlign: 'center', color: colores.texto },
+  mensaje: { fontSize: 16, textAlign: 'center', color: colores.texto },
 });

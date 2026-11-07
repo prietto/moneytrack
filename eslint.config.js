@@ -42,8 +42,13 @@ const patronesReloj = [{ regex: '(^|/)services/reloj$', message: mensajeReloj }]
 const mensajeComando =
   'Las pantallas escriben solo con ejecutar() de hooks/use-comando (AD-3, AD-18): así pasan por el log y el post-comando.';
 
-// ejecutarComando y la señal de cambios son internos de data/ y hooks/.
-const patronesComando = [{ regex: '(^|/)data/(ejecutar-comando|cambios)$', message: mensajeComando }];
+// ejecutarComando y la señal de cambios son internos de data/ y hooks/. El
+// contexto y definirComando también: una pantalla no fabrica comandos en línea,
+// solo importa los de data/commands/*.
+const patronesComando = [
+  { regex: '(^|/)data/(ejecutar-comando|cambios)$', message: mensajeComando },
+  { regex: '(^|/)data/(contexto|commands/definir-comando)$', message: mensajeComando },
+];
 
 const mensajeFecha =
   'domain/ no lee el reloj: recibe `hoy` (YYYY-MM-DD) como parámetro; usa services/reloj desde hooks/ (AD-1).';

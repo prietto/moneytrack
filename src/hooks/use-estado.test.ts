@@ -13,7 +13,15 @@ jest.mock('./use-hoy', () => ({ useHoy: jest.fn() }));
 const useHechosMock = jest.mocked(useHechos);
 const useHoyMock = jest.mocked(useHoy);
 
-const configurados: Hechos = { saldoInicial: { monto: 5_000_000, fecha: '2026-11-01' }, colchon: 1_000_000 };
+// Los Pagos caen después del 2026-11-05: no mueven el saldo del primer día.
+const configurados: Hechos = {
+  saldoInicial: { monto: 5_000_000, fecha: '2026-11-01' },
+  colchon: 1_000_000,
+  pagos: [
+    { id: 'p1', numero: 1, dia: 10, montoEsperado: 1 },
+    { id: 'p2', numero: 2, dia: 30, montoEsperado: 1 },
+  ],
+};
 
 beforeEach(() => {
   useHechosMock.mockReturnValue(hechosVacios);
@@ -23,7 +31,7 @@ beforeEach(() => {
 describe('useEstado', () => {
   it('sin configurar', async () => {
     const { result } = await renderHook(() => useEstado());
-    expect(result.current).toEqual({ tipo: 'sinConfigurar', hoy: '2026-11-05' });
+    expect(result.current).toEqual({ tipo: 'sinConfigurar', hoy: '2026-11-05', faltan: ['pagos', 'saldoInicial', 'colchon'] });
   });
 
   it('configurado: calcula el Dinero libre', async () => {

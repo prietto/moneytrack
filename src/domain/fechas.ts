@@ -15,7 +15,8 @@ function esBisiesto(anio: number): boolean {
   return (anio % 4 === 0 && anio % 100 !== 0) || anio % 400 === 0;
 }
 
-function diasDelMes(anio: number, mes: number): number {
+/** Días del mes `mes` (1..12) de `anio`, con bisiestos. */
+export function diasDelMes(anio: number, mes: number): number {
   if (mes === 2) return esBisiesto(anio) ? 29 : 28;
   return mes === 4 || mes === 6 || mes === 9 || mes === 11 ? 30 : 31;
 }
@@ -78,4 +79,51 @@ export function sumarDias(fecha: string, n: number): string {
 /** Días de `desde` a `hasta`, con signo: positivo si `hasta` es posterior. */
 export function diasEntre(desde: string, hasta: string): number {
   return numeroDeDia(hasta) - numeroDeDia(desde);
+}
+
+/* --- Meses (AD-5): claves `YYYY-MM` -------------------------------------- */
+
+const FORMATO_MES = /^(\d{4})-(\d{2})$/;
+
+function dos(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+/** Clave `'YYYY-MM'` del mes de una fecha `YYYY-MM-DD`. */
+export function mesDe(fecha: string): string {
+  return fecha.slice(0, 7);
+}
+
+/** Año y mes de una clave `'YYYY-MM'`, o null si no es válida. */
+function partesMes(clave: string): [number, number] | null {
+  const m = FORMATO_MES.exec(clave);
+  if (!m) return null;
+  const mes = Number(m[2]);
+  if (mes < 1 || mes > 12) return null;
+  return [Number(m[1]), mes];
+}
+
+/**
+ * Suma `n` meses (entero, puede ser negativo) a una clave `'YYYY-MM'`. Con
+ * una clave inválida devuelve `''` (domain/ es total; quien llama valida).
+ */
+export function sumarMeses(clave: string, n: number): string {
+  const p = partesMes(clave);
+  if (!p || !Number.isInteger(n)) return '';
+  // Meses desde el año 0, con piso para que los negativos cuadren.
+  const total = p[0] * 12 + (p[1] - 1) + n;
+  const anio = Math.floor(total / 12);
+  const mes = total - anio * 12 + 1;
+  return `${String(anio).padStart(4, '0')}-${dos(mes)}`;
+}
+
+/**
+ * Fecha del día `dia` en el mes `clave`. Si ese día no existe en el mes, cae
+ * el último día del mes (AD-5): sin ajuste por fines de semana. Con una clave
+ * inválida devuelve `''`.
+ */
+export function fechaEnMes(clave: string, dia: number): string {
+  const p = partesMes(clave);
+  if (!p) return '';
+  return `${clave}-${dos(Math.min(dia, diasDelMes(p[0], p[1])))}`;
 }

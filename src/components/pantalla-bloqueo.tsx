@@ -4,6 +4,7 @@ import type { Acceso } from '@/hooks/use-acceso';
 import { textosAcceso } from '@/textos/acceso';
 
 import { Boton } from './boton';
+import { colores } from './tema';
 
 /**
  * Pantalla de bloqueo (AD-15, UX-DR1): fondo opaco y ningún dato. Como capa,
@@ -47,8 +48,8 @@ const estilos = StyleSheet.create({
     justifyContent: 'center',
     gap: 16,
     padding: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colores.fondo,
   },
-  titulo: { fontSize: 24, fontWeight: '600', color: '#1A1A1A' },
-  mensaje: { fontSize: 16, textAlign: 'center', color: '#1A1A1A' },
+  titulo: { fontSize: 24, fontWeight: '600', color: colores.texto },
+  mensaje: { fontSize: 16, textAlign: 'center', color: colores.texto },
 });

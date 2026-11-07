@@ -1,4 +1,4 @@
-import type { Comando } from '@/data/contexto';
+import type { ComandoDefinido } from '@/data/commands/definir-comando';
 import { ejecutarComando } from '@/data/ejecutar-comando';
 import { cargarHechosActuales } from '@/data/use-hechos';
 import { calcularEstado } from '@/domain/calcular-estado';
@@ -48,11 +48,12 @@ function correrTrasComando(): void {
 }
 
 /**
- * La única vía de escritura de las pantallas (AD-3, AD-18). Nunca lanza
+ * La única vía de escritura de las pantallas (AD-3, AD-18). Solo acepta
+ * comandos fabricados en `data/commands` (`ComandoDefinido`). Nunca lanza
  * hacia src/app/ (AD-23): si el comando falla, registra la causa en el log
  * (`comando.<operacion>`) y devuelve `fallo('fallo')`, sin la causa.
  */
-export function ejecutar<T>(comando: Comando<T>): Resultado<T, 'fallo'> {
+export function ejecutar<T>(comando: ComandoDefinido<T>): Resultado<T, 'fallo'> {
   const resultado = ejecutarComando(comando);
   if (!resultado.ok) {
     log.error(`comando.${comando.operacion}`, { error: resultado.error.causa });

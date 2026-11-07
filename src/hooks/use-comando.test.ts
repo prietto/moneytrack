@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react-native';
 
-import type { Comando } from '@/data/contexto';
+import { definirComando } from '@/data/commands/definir-comando';
 import { ejecutarComando } from '@/data/ejecutar-comando';
 import { cargarHechosActuales } from '@/data/use-hechos';
 import type { Hechos } from '@/domain/hechos';
@@ -18,8 +18,15 @@ const ejecutarComandoMock = jest.mocked(ejecutarComando);
 const cargarMock = jest.mocked(cargarHechosActuales);
 const hoyMock = jest.mocked(hoy);
 
-const hechos: Hechos = { saldoInicial: { monto: 2_000_000, fecha: '2026-11-01' }, colchon: 500_000 };
-const comando: Comando<string> = { operacion: 'prueba.x', aplicar: () => 'valor' };
+const hechos: Hechos = {
+  saldoInicial: { monto: 2_000_000, fecha: '2026-11-01' },
+  colchon: 500_000,
+  pagos: [
+    { id: 'p1', numero: 1, dia: 10, montoEsperado: 1 },
+    { id: 'p2', numero: 2, dia: 30, montoEsperado: 1 },
+  ],
+};
+const comando = definirComando('prueba.x', () => 'valor');
 
 const cancelaciones: (() => void)[] = [];
 function registrar(fn: Parameters<typeof registrarTrasComando>[0]) {

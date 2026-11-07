@@ -11,7 +11,8 @@ import { textosError } from '@/textos/errores';
 
 jest.mock('expo-router', () => {
   const { View } = jest.requireActual('react-native');
-  return { Stack: () => <View testID="stack" /> };
+  // Stack.Screen se usa como hijo: el mock expone la propiedad.
+  return { Stack: Object.assign(() => <View testID="stack" />, { Screen: () => null }) };
 });
 jest.mock('@/hooks/use-acceso', () => ({ useAcceso: jest.fn() }));
 // No se carga expo-sqlite en Jest.

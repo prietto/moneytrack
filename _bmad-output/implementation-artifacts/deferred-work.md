@@ -30,3 +30,13 @@
 - `src/hooks/use-comando.ts:28`: `correrTrasComando` no tiene guarda de reentrada. Un post-comando que llame a `ejecutar` recurre sin límite. Le toca a la Épica 6, cuando se conecte `notificaciones.reprogramar`.
 - `src/data/contexto.ts:30`: `Comando.aplicar` recibe `ctx.db` completo. Una pantalla puede definir un comando en línea que escriba sin rastro y sin pasar por `data/commands`, y el lint no lo ve. Decidirlo en H1.4, cuando exista `data/commands`; por ejemplo, que `ejecutar` acepte solo comandos fabricados allí.
 - `src/data/tablas/rastro.ts:73`: `editarConRastro` con `cambios` vacío (o sin cambios reales) actualiza `updatedAt` y escribe un rastro "editar" que solo es ruido. Revisarlo con los primeros comandos de edición.
+
+## Deferred from: code review of 1-4-configurar-pagos-saldo-inicial-y-colchon-y-ver-el-primer-dinero-libre (2026-11-06)
+
+- `src/domain/calcular-estado.ts:16` y `src/app/(tabs)/ajustes.tsx:38`: un saldo con fecha futura (reloj que retrocede) sale como faltante en Inicio y como configurado en Ajustes, sin explicar por qué.
+- `src/app/(tabs)/ajustes.tsx:38`: con saldo y sin Colchón, el resumen dice "Sin configurar". Hoy no se alcanza porque el comando guarda ambos.
+- `src/data/use-hechos.ts:22`: la caché se indexa solo por versión. Una llamada con versión vieja desaloja la nueva (lecturas de más), y las escrituras sin `avisarCambio` (restauración de H7, otra instancia de `obtenerDb`) dejan hechos viejos.
+- `drizzle/0001_giant_thanos.sql`: sin restricción de fila única en `ajustes` ni `CHECK` de `numero IN (1,2)` / `dia BETWEEN 1 AND 31` en `pagos`. `cargarHechos` descarta las filas inválidas en silencio.
+- `src/components/configuracion/formulario-pagos.tsx:68` y `formulario-saldo-y-colchon.tsx:25`: los formularios toman la configuración una sola vez y no se resincronizan. Revisarlo en el asistente de H1.8.
+- `src/components/configuracion/formulario.tsx:22`: en Android, `KeyboardAvoidingView` va sin `behavior` y con edge-to-edge; verificar en dispositivo que el teclado no tape Guardar.
+- `src/app/(tabs)/ajustes.tsx:16` e `index.tsx`: `router.push` sin guard ante doble toque apila el formulario dos veces.

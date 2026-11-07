@@ -5,11 +5,13 @@ import { ActivityIndicator, BackHandler, Keyboard, StyleSheet, Text, View } from
 import { Boton } from '@/components/boton';
 import { ErrorAmable } from '@/components/error-amable';
 import { PantallaBloqueo } from '@/components/pantalla-bloqueo';
+import { colores } from '@/components/tema';
 import { useMigraciones } from '@/data/migraciones';
 import { useAcceso } from '@/hooks/use-acceso';
 import { instalarRegistroDeErroresGlobales, log } from '@/services/log';
 import { textosAcceso } from '@/textos/acceso';
 import { textosApp } from '@/textos/app';
+import { textosNavegacion } from '@/textos/navegacion';
 
 // Errores fuera del render (eventos, timers), que el boundary no captura.
 instalarRegistroDeErroresGlobales();
@@ -66,11 +68,25 @@ export default function RootLayout() {
   } else if (!migraciones.exito) {
     contenido = (
       <View style={estilos.centro} accessibilityLabel={textosApp.preparandoDatos}>
-        <ActivityIndicator />
+        <ActivityIndicator color={colores.primario} />
       </View>
     );
   } else {
-    contenido = <Stack />;
+    // Los formularios son pantallas del Stack, no modales: la capa de bloqueo
+    // no tapa ventanas nativas (Modal, Alert, presentation: 'modal').
+    contenido = (
+      <Stack
+        screenOptions={{
+          contentStyle: { backgroundColor: colores.fondo },
+          headerStyle: { backgroundColor: colores.fondo },
+          headerTintColor: colores.texto,
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="configuracion/pagos" options={{ title: textosNavegacion.pagos }} />
+        <Stack.Screen name="configuracion/saldo-y-colchon" options={{ title: textosNavegacion.saldoYColchon }} />
+      </Stack>
+    );
   }
 
   // La capa tapa cualquier contenido, también el error o la carga de las migraciones.
@@ -93,7 +109,14 @@ export default function RootLayout() {
 }
 
 const estilos = StyleSheet.create({
-  raiz: { flex: 1 },
-  centro: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
-  mensaje: { fontSize: 16, textAlign: 'center' },
+  raiz: { flex: 1, backgroundColor: colores.fondo },
+  centro: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    padding: 24,
+    backgroundColor: colores.fondo,
+  },
+  mensaje: { fontSize: 16, textAlign: 'center', color: colores.texto },
 });

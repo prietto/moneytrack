@@ -22,6 +22,9 @@ const obtenerDbMock = jest.mocked(obtenerDb);
 let base: ReturnType<typeof crearBaseDePrueba>;
 
 beforeEach(() => {
+  // La caché de hechos es de módulo y se indexa por la versión de la señal:
+  // un aviso la invalida para que cada prueba lea su propia base.
+  avisarCambio();
   base = crearBaseDePrueba();
   obtenerDbMock.mockReturnValue(base.db as unknown as ReturnType<typeof obtenerDb>);
   cargarMock.mockClear();
@@ -60,7 +63,7 @@ describe('useHechos', () => {
 
   it('recarga cuando se avisa un cambio', async () => {
     const { result } = await renderHook(() => useHechos());
-    const nuevos = { saldoInicial: { monto: 1, fecha: '2026-11-05' }, colchon: 0 };
+    const nuevos = { saldoInicial: { monto: 1, fecha: '2026-11-05' }, colchon: 0, pagos: [] };
     cargarMock.mockReturnValueOnce(nuevos);
 
     await act(async () => avisarCambio());
@@ -70,7 +73,7 @@ describe('useHechos', () => {
   });
 
   it('si hubo un cambio entre la carga del render y la suscripción, recarga', async () => {
-    const nuevos = { saldoInicial: { monto: 1, fecha: '2026-11-05' }, colchon: 0 };
+    const nuevos = { saldoInicial: { monto: 1, fecha: '2026-11-05' }, colchon: 0, pagos: [] };
     let primera = true;
     cargarMock.mockImplementation(() => {
       // Simula un commit justo después de la carga del render, antes del efecto.
@@ -147,6 +150,63 @@ describe('useHechos', () => {
       );
       expect(screen.getByText('sin base')).toBeTruthy();
     });
+  });
+});
+
+describe('caché por versión (N+1 cargas)', () => {
+  function Dos() {
+    return (
+      <>
+        <Consumidor />
+        <Consumidor />
+      </>
+    );
+  }
+
+  it('dos consumidores y cargarHechosActuales en la misma versión leen una sola vez y comparten el objeto', async () => {
+    const vistos: unknown[] = [];
+    function Registra() {
+      vistos.push(useHechos());
+      return null;
+    }
+    await render(
+      <>
+        <Registra />
+        <Registra />
+      </>,
+    );
+    const actuales = cargarHechosActuales();
+    expect(cargarMock).toHaveBeenCalledTimes(1);
+    expect(vistos[0]).toBe(vistos[1]);
+    expect(actuales).toBe(vistos[0]);
+  });
+
+  it('tras avisarCambio vuelve a cargar una sola vez', async () => {
+    await render(<Dos />);
+    expect(cargarMock).toHaveBeenCalledTimes(1);
+    await act(async () => avisarCambio());
+    cargarHechosActuales();
+    expect(cargarMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('una carga fallida no se guarda como éxito: la siguiente llamada reintenta', () => {
+    cargarMock.mockImplementationOnce(() => {
+      throw new Error('falló una vez');
+    });
+    expect(() => cargarHechosActuales()).toThrow('falló una vez');
+    expect(cargarHechosActuales()).toEqual(hechosVacios);
+    expect(cargarMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('si hay un cambio durante la carga, esos hechos no quedan como los de la versión nueva', () => {
+    const nuevos = { saldoInicial: null, colchon: 7, pagos: [] };
+    cargarMock.mockImplementationOnce((db) => {
+      avisarCambio();
+      return jest.requireActual('./queries/cargar-hechos').cargarHechos(db);
+    });
+    cargarHechosActuales();
+    cargarMock.mockReturnValueOnce(nuevos);
+    expect(cargarHechosActuales()).toBe(nuevos);
   });
 });
 
