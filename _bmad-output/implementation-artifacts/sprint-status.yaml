@@ -1,5 +1,5 @@
 # generated: 2026-11-04
-# last_updated: 2026-11-05
+# last_updated: 2026-11-06
 # project: moneytrack_app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - La retrospectiva agrega sus action items a action_items; sprint-status muestra los abiertos
 
 generated: 2026-11-04
-last_updated: 2026-11-05
+last_updated: 2026-11-06
 project: moneytrack_app
 project_key: NOKEY
 tracking_system: file-system
@@ -54,8 +54,8 @@ development_status:
   1-1-proyecto-base-desde-la-plantilla-expo-sdk-57: done
   1-2-acceso-protegido-diagnostico-y-error-amable: done
   1-3-nucleo-de-calculo-reloj-hechos-y-estado-reactivo: done
-  1-4-configurar-pagos-saldo-inicial-y-colchon-y-ver-el-primer-dinero-libre: backlog
-  1-5-registrar-vehiculos-y-obligaciones-mensuales-y-anuales: backlog
+  1-4-configurar-pagos-saldo-inicial-y-colchon-y-ver-el-primer-dinero-libre: done
+  1-5-registrar-vehiculos-y-obligaciones-mensuales-y-anuales: ready-for-dev
   1-6-presupuestos-esenciales-fondo-enduro-y-categorias-iniciales: backlog
   1-7-deudas-deuda-objetivo-y-reserva-de-meta: backlog
   1-8-asistente-de-primer-uso-y-ajustes: backlog
