@@ -24,11 +24,11 @@ function Entrada({ titulo, resumen, ruta }: { titulo: string; resumen: string; r
 }
 
 /**
- * Ajustes. Vehículos, Obligaciones, umbral y exportar llegan en H1.5–H1.8 y
- * H7: sin entradas deshabilitadas mientras tanto.
+ * Ajustes. Presupuestos, Deudas, umbral y exportar llegan en H1.6–H1.8 y H7:
+ * sin entradas deshabilitadas mientras tanto.
  */
 export default function Ajustes() {
-  const { pago1, pago2, saldoInicial, colchon } = useConfiguracion();
+  const { pago1, pago2, saldoInicial, colchon, vehiculos, obligaciones } = useConfiguracion();
   const hoy = useHoy();
 
   const lineasPagos = [pago1, pago2]
@@ -47,10 +47,18 @@ export default function Ajustes() {
     resumenSaldo = textosAjustes.resumenColchon(formatearDinero(colchon));
   }
 
+  const resumenVehiculos = textosAjustes.resumenVehiculos(vehiculos.map((v) => v.nombre));
+  const resumenObligaciones = textosAjustes.resumenObligaciones(
+    obligaciones.filter((o) => o.tipo === 'mensual').length,
+    obligaciones.filter((o) => o.tipo === 'anual').length,
+  );
+
   return (
     <ScrollView style={estilos.fondo} contentContainerStyle={estilos.contenido}>
       <Entrada titulo={textosAjustes.pagos} resumen={resumenPagos} ruta="/configuracion/pagos" />
       <Entrada titulo={textosAjustes.saldoYColchon} resumen={resumenSaldo} ruta="/configuracion/saldo-y-colchon" />
+      <Entrada titulo={textosAjustes.vehiculos} resumen={resumenVehiculos} ruta="/configuracion/vehiculos" />
+      <Entrada titulo={textosAjustes.obligaciones} resumen={resumenObligaciones} ruta="/configuracion/obligaciones" />
     </ScrollView>
   );
 }

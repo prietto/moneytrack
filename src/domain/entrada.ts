@@ -116,3 +116,202 @@ export function validarSaldoYColchon(
     colchon: datos.colchon as number,
   });
 }
+
+/* --- Nombres --------------------------------------------------------------- */
+
+/** Largo máximo de un nombre (Vehículo u Obligación), ya normalizado. */
+export const NOMBRE_MAXIMO = 40;
+
+/** Quita los espacios de los extremos y colapsa los internos a uno. */
+export function normalizarNombre(texto: string): string {
+  return texto.trim().replace(/\s+/g, ' ');
+}
+
+/** Mismo nombre sin distinguir mayúsculas ni espacios (sin `Intl`: domain/ es puro). */
+export function mismoNombre(a: string, b: string): boolean {
+  return normalizarNombre(a).toLowerCase() === normalizarNombre(b).toLowerCase();
+}
+
+type ErrorNombre = 'nombreVacio' | 'nombreLargo';
+
+function errorNombre(nombre: string): ErrorNombre | undefined {
+  const normalizado = normalizarNombre(nombre);
+  if (normalizado === '') return 'nombreVacio';
+  if (normalizado.length > NOMBRE_MAXIMO) return 'nombreLargo';
+  return undefined;
+}
+
+/** Monto de una Obligación: entero seguro > 0. */
+function esMontoPositivo(monto: number | null): monto is number {
+  return esMonto(monto) && monto > 0;
+}
+
+/* --- Vehículos ------------------------------------------------------------- */
+
+export type DatosVehiculo = { nombre: string };
+export type VehiculoValido = { nombre: string };
+export type ErrorVehiculo = ErrorNombre | 'nombreRepetido';
+
+/**
+ * Error del nombre de un Vehículo; vacío si es válido. No se repite entre los
+ * vigentes (`existentes`); al editar, `idPropio` excluye al mismo Vehículo.
+ */
+export function erroresVehiculo(
+  datos: DatosVehiculo,
+  existentes: { id: string; nombre: string }[],
+  idPropio: string | null,
+): { nombre?: ErrorVehiculo } {
+  const error = errorNombre(datos.nombre);
+  if (error) return { nombre: error };
+  if (existentes.some((v) => v.id !== idPropio && mismoNombre(v.nombre, datos.nombre))) {
+    return { nombre: 'nombreRepetido' };
+  }
+  return {};
+}
+
+/** Devuelve el nombre normalizado, o el error. */
+export function validarVehiculo(
+  datos: DatosVehiculo,
+  existentes: { id: string; nombre: string }[],
+  idPropio: string | null,
+): Resultado<VehiculoValido, ErrorVehiculo> {
+  return primero(erroresVehiculo(datos, existentes, idPropio), { nombre: normalizarNombre(datos.nombre) });
+}
+
+/* --- Obligación mensual ---------------------------------------------------- */
+
+export type DatosObligacionMensual = { nombre: string; monto: number | null; dia: number | null };
+export type ObligacionMensualValida = { nombre: string; monto: number; dia: number };
+export type ErrorObligacionMensual = ErrorNombre | 'montoInvalido' | 'diaInvalido';
+
+type ErroresObligacionMensual = { nombre?: ErrorNombre; monto?: 'montoInvalido'; dia?: 'diaInvalido' };
+
+/** Error de cada campo de una Obligación mensual; vacío si todo es válido. */
+export function erroresObligacionMensual(datos: DatosObligacionMensual): ErroresObligacionMensual {
+  const errores: ErroresObligacionMensual = {};
+  const nombre = errorNombre(datos.nombre);
+  if (nombre) errores.nombre = nombre;
+  if (!esMontoPositivo(datos.monto)) errores.monto = 'montoInvalido';
+  if (!esDia(datos.dia)) errores.dia = 'diaInvalido';
+  return errores;
+}
+
+export function validarObligacionMensual(
+  datos: DatosObligacionMensual,
+): Resultado<ObligacionMensualValida, ErrorObligacionMensual> {
+  return primero(erroresObligacionMensual(datos), {
+    nombre: normalizarNombre(datos.nombre),
+    monto: datos.monto as number,
+    dia: datos.dia as number,
+  });
+}
+
+/* --- Obligación anual ------------------------------------------------------ */
+
+/**
+ * Lo más lejos que puede estar el próximo vencimiento de una Obligación
+ * anual: un año y un día (366 cubre los bisiestos).
+ */
+export const LEJANIA_MAXIMA_VENCIMIENTO_DIAS = 366;
+
+export type DatosObligacionAnual = {
+  nombre: string;
+  monto: number | null;
+  fechaVencimiento: string;
+  vehiculoId: string | null;
+  reservaMonto: number | null;
+  reservaFecha: string;
+};
+export type ObligacionAnualValida = {
+  nombre: string;
+  monto: number;
+  fechaVencimiento: string;
+  vehiculoId: string | null;
+  reservaInicial: { monto: number; fecha: string };
+};
+export type ErrorObligacionAnual =
+  | ErrorNombre
+  | 'montoInvalido'
+  | 'fechaInvalida'
+  | 'fechaAntigua'
+  | 'fechaLejana'
+  | 'fechaFutura'
+  | 'vehiculoInvalido'
+  | 'reservaInvalida'
+  | 'reservaMayorQueMonto';
+
+/** Las fechas guardadas de una anual que se edita: se aceptan aunque envejezcan. */
+export type FechasGuardadasAnual = { fechaVencimiento: string; reservaFecha: string };
+
+type ErroresObligacionAnual = {
+  nombre?: ErrorNombre;
+  monto?: 'montoInvalido';
+  fechaVencimiento?: 'fechaInvalida' | 'fechaAntigua' | 'fechaLejana';
+  vehiculoId?: 'vehiculoInvalido';
+  reservaMonto?: 'reservaInvalida' | 'reservaMayorQueMonto';
+  reservaFecha?: 'fechaInvalida' | 'fechaFutura' | 'fechaAntigua';
+};
+
+/**
+ * Error de cada campo de una Obligación anual; vacío si todo es válido.
+ *
+ * - La fecha de vencimiento es la próxima (o la vencida sin pagar): no más
+ *   antigua que `ANTIGUEDAD_MAXIMA_SALDO_DIAS` ni más lejana que
+ *   `LEJANIA_MAXIMA_VENCIMIENTO_DIAS`.
+ * - La reserva inicial es un punto de partida con fecha (AD-2): de 0 al monto,
+ *   con fecha no futura ni más antigua que `ANTIGUEDAD_MAXIMA_SALDO_DIAS`.
+ * - Las fechas `guardada` se aceptan tal cual aunque envejezcan (como el saldo).
+ */
+export function erroresObligacionAnual(
+  datos: DatosObligacionAnual,
+  hoy: string,
+  guardada: FechasGuardadasAnual | null,
+  vehiculosVigentes: { id: string }[],
+): ErroresObligacionAnual {
+  const errores: ErroresObligacionAnual = {};
+  const limiteAntiguo = sumarDias(hoy, -ANTIGUEDAD_MAXIMA_SALDO_DIAS);
+
+  const nombre = errorNombre(datos.nombre);
+  if (nombre) errores.nombre = nombre;
+
+  if (!esMontoPositivo(datos.monto)) errores.monto = 'montoInvalido';
+
+  if (!esFechaValida(datos.fechaVencimiento)) errores.fechaVencimiento = 'fechaInvalida';
+  else if (datos.fechaVencimiento !== guardada?.fechaVencimiento && datos.fechaVencimiento < limiteAntiguo) {
+    errores.fechaVencimiento = 'fechaAntigua';
+  } else if (datos.fechaVencimiento > sumarDias(hoy, LEJANIA_MAXIMA_VENCIMIENTO_DIAS)) {
+    errores.fechaVencimiento = 'fechaLejana';
+  }
+
+  if (datos.vehiculoId !== null && !vehiculosVigentes.some((v) => v.id === datos.vehiculoId)) {
+    errores.vehiculoId = 'vehiculoInvalido';
+  }
+
+  if (!esMonto(datos.reservaMonto)) errores.reservaMonto = 'reservaInvalida';
+  else if (esMontoPositivo(datos.monto) && datos.reservaMonto > datos.monto) {
+    errores.reservaMonto = 'reservaMayorQueMonto';
+  }
+
+  if (!esFechaValida(datos.reservaFecha)) errores.reservaFecha = 'fechaInvalida';
+  else if (datos.reservaFecha > hoy) errores.reservaFecha = 'fechaFutura';
+  else if (datos.reservaFecha !== guardada?.reservaFecha && datos.reservaFecha < limiteAntiguo) {
+    errores.reservaFecha = 'fechaAntigua';
+  }
+
+  return errores;
+}
+
+export function validarObligacionAnual(
+  datos: DatosObligacionAnual,
+  hoy: string,
+  guardada: FechasGuardadasAnual | null,
+  vehiculosVigentes: { id: string }[],
+): Resultado<ObligacionAnualValida, ErrorObligacionAnual> {
+  return primero(erroresObligacionAnual(datos, hoy, guardada, vehiculosVigentes), {
+    nombre: normalizarNombre(datos.nombre),
+    monto: datos.monto as number,
+    fechaVencimiento: datos.fechaVencimiento,
+    vehiculoId: datos.vehiculoId,
+    reservaInicial: { monto: datos.reservaMonto as number, fecha: datos.reservaFecha },
+  });
+}

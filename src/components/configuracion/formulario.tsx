@@ -6,17 +6,22 @@ import { textosConfiguracion } from '@/textos/configuracion';
 import { Boton } from '../boton';
 import { colores } from '../tema';
 
-/** Marco común de los formularios de configuración: scroll, teclado, fallo y Guardar. */
+/**
+ * Marco común de los formularios de configuración: scroll, teclado, fallo y
+ * Guardar. `pie` va debajo de Guardar (p. ej. el botón de borrar).
+ */
 export function Formulario({
   children,
   guardando,
   fallo,
   onGuardar,
+  pie,
 }: {
   children: ReactNode;
   guardando: boolean;
   fallo: boolean;
   onGuardar: () => void;
+  pie?: ReactNode;
 }) {
   return (
     <KeyboardAvoidingView style={estilos.raiz} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -34,6 +39,7 @@ export function Formulario({
             deshabilitado={guardando}
           />
         </View>
+        {pie}
       </ScrollView>
     </KeyboardAvoidingView>
   );

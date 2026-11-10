@@ -1,13 +1,40 @@
 import { asc } from 'drizzle-orm';
 
-import type { Hechos, NumeroPago, PagoDefinido } from '@/domain/hechos';
+import type { Hechos, NumeroPago, ObligacionDefinida, PagoDefinido, Vehiculo } from '@/domain/hechos';
 
 import type { BaseSincrona } from '../contexto';
-import { ajustes, pagos } from '../schema';
+import { ajustes, obligaciones, pagos, vehiculos } from '../schema';
 import { vigentes } from './vigentes';
 
 function esNumeroPago(numero: number): numero is NumeroPago {
   return numero === 1 || numero === 2;
+}
+
+type FilaObligacion = typeof obligaciones.$inferSelect;
+
+/**
+ * La definición de una fila, o `null` si le falta algo de su tipo (defensa
+ * para que el tipo sea honesto, y para las cuotas de Deuda de H1.7, sin
+ * monto propio). Un `vehiculoId` que no es de un Vehículo vigente pasa a null.
+ */
+function aObligacion(fila: FilaObligacion, idsVehiculos: Set<string>): ObligacionDefinida | null {
+  const { id, nombre, monto } = fila;
+  if (monto === null) return null;
+  if (fila.tipo === 'mensual') {
+    return fila.dia === null ? null : { id, tipo: 'mensual', nombre, monto, dia: fila.dia };
+  }
+  if (fila.tipo !== 'anual') return null;
+  const { fechaVencimiento, reservaInicialMonto, reservaInicialFecha, vehiculoId } = fila;
+  if (fechaVencimiento === null || reservaInicialMonto === null || reservaInicialFecha === null) return null;
+  return {
+    id,
+    tipo: 'anual',
+    nombre,
+    monto,
+    fechaVencimiento,
+    vehiculoId: vehiculoId !== null && idsVehiculos.has(vehiculoId) ? vehiculoId : null,
+    reservaInicial: { monto: reservaInicialMonto, fecha: reservaInicialFecha },
+  };
 }
 
 /**
@@ -23,7 +50,8 @@ function esNumeroPago(numero: number): numero is NumeroPago {
  *
  * Tablas que lee cada historia:
  * - H1.4: `pagos` y `ajustes` (saldo inicial y Colchón: configuración con fecha, AD-2).
- * - H1.5: Vehículos y Obligaciones.
+ * - H1.5: `vehiculos` y `obligaciones` (solo definiciones; las ocurrencias y la
+ *   reserva anual las calcula domain/, AD-2, AD-5).
  * - H1.6: Presupuestos, Fondo Enduro y Categorías.
  * - H1.7: Deudas y Meta.
  * - Épica 2: Gastos e ingresos (movimientos).
@@ -50,5 +78,31 @@ export function cargarHechos(db: BaseSincrona): Hechos {
       ? { monto: fila.saldoInicialMonto, fecha: fila.saldoInicialFecha }
       : null;
 
-  return { saldoInicial, colchon: fila?.colchon ?? null, pagos: pagosDefinidos };
+  const vehiculosVigentes: Vehiculo[] = db
+    .select()
+    .from(vehiculos)
+    .where(vigentes(vehiculos))
+    .orderBy(asc(vehiculos.createdAt), asc(vehiculos.id))
+    .all()
+    .map(({ id, nombre }) => ({ id, nombre }));
+  const idsVehiculos = new Set(vehiculosVigentes.map((v) => v.id));
+
+  const obligacionesDefinidas: ObligacionDefinida[] = [];
+  for (const filaObligacion of db
+    .select()
+    .from(obligaciones)
+    .where(vigentes(obligaciones))
+    .orderBy(asc(obligaciones.createdAt), asc(obligaciones.id))
+    .all()) {
+    const obligacion = aObligacion(filaObligacion, idsVehiculos);
+    if (obligacion) obligacionesDefinidas.push(obligacion);
+  }
+
+  return {
+    saldoInicial,
+    colchon: fila?.colchon ?? null,
+    pagos: pagosDefinidos,
+    vehiculos: vehiculosVigentes,
+    obligaciones: obligacionesDefinidas,
+  };
 }

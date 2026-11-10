@@ -1,7 +1,7 @@
 import { calcularEstado, HORIZONTE_DIAS } from './calcular-estado';
 import type { Estado } from './estado';
 import { sumarDias } from './fechas';
-import { type Hechos, hechosVacios, type PagoDefinido } from './hechos';
+import { type Hechos, hechosVacios, type ObligacionAnual, type ObligacionMensual, type PagoDefinido } from './hechos';
 
 const HOY = '2026-11-03';
 
@@ -9,11 +9,34 @@ function pago(numero: 1 | 2, dia: number, montoEsperado: number): PagoDefinido {
   return { id: `pago-${numero}`, numero, dia, montoEsperado };
 }
 
+function mensual(id: string, nombre: string, dia: number, monto: number): ObligacionMensual {
+  return { id, tipo: 'mensual', nombre, monto, dia };
+}
+
+function anual(
+  id: string,
+  nombre: string,
+  monto: number,
+  fechaVencimiento: string,
+  reserva: number,
+  fechaReserva: string,
+): ObligacionAnual {
+  return {
+    id,
+    tipo: 'anual',
+    nombre,
+    monto,
+    fechaVencimiento,
+    vehiculoId: null,
+    reservaInicial: { monto: reserva, fecha: fechaReserva },
+  };
+}
+
 /** Pagos que caen dentro del Horizonte de HOY (10-nov y 30-nov), pero después del primer día: no mueven el saldo de HOY. */
 const pagosLejanos = [pago(1, 10, 2_000_000), pago(2, 30, 6_000_000)];
 
 function configurado(monto: number, colchon: number, cambios: Partial<Hechos> = {}): Hechos {
-  return { saldoInicial: { monto, fecha: '2026-11-01' }, colchon, pagos: pagosLejanos, ...cambios };
+  return { ...hechosVacios, saldoInicial: { monto, fecha: '2026-11-01' }, colchon, pagos: pagosLejanos, ...cambios };
 }
 
 function calculado(estado: Estado) {
@@ -27,6 +50,7 @@ function saldoEn(estado: ReturnType<typeof calculado>, fecha: string): number | 
 
 /** Caso base del addendum, recortado a H1.4. */
 const casoBase: Hechos = {
+  ...hechosVacios,
   saldoInicial: { monto: 10_000_000, fecha: '2026-11-03' },
   colchon: 4_000_000,
   pagos: [pago(1, 10, 2_000_000), pago(2, 30, 6_000_000)],
@@ -141,6 +165,12 @@ describe('calcularEstado', () => {
         },
       ]);
       expect(estado.pagosAtrasados).toEqual([]);
+      // Sin Obligaciones: sin Reservas ni listas, y las mismas cifras de H1.4.
+      expect(estado.obligacionesPendientes).toEqual([]);
+      expect(estado.obligacionesVencidas).toEqual([]);
+      expect(estado.reservas).toEqual({ anual: 0, total: 0 });
+      expect(estado.reservasAnuales).toEqual([]);
+      expect(estado.aportesProgramados).toEqual([]);
     });
 
     it('una ocurrencia en hoy no está atrasada', () => {
@@ -243,12 +273,287 @@ describe('calcularEstado', () => {
     });
   });
 
+  describe('Obligaciones y reserva anual', () => {
+    /** Caso A: el addendum recortado a H1.5. */
+    const casoA: Hechos = {
+      ...casoBase,
+      obligaciones: [
+        mensual('servicios', 'Servicios', 8, 300_000),
+        mensual('arriendo', 'Arriendo', 1, 1_500_000),
+        anual('soat', 'SOAT', 1_800_000, '2027-03-15', 400_000, '2026-11-03'),
+      ],
+    };
+
+    it('A. addendum recortado: Reservas, Aportes, saldo proyectado, mínimo y Dinero libre', () => {
+      const estado = calculado(calcularEstado(casoA, HOY));
+      expect(estado.reservas).toEqual({ anual: 400_000, total: 400_000 });
+      expect(estado.reservasAnuales).toEqual([{ obligacionId: 'soat', reserva: 400_000 }]);
+      expect(estado.aportesProgramados).toEqual([
+        { fecha: '2026-11-30', tipo: 'prorrateoAnual', obligacionId: 'soat', monto: 150_000 },
+      ]);
+      for (const d of estado.saldoProyectado) {
+        const esperado =
+          d.fecha < '2026-11-08'
+            ? 9_600_000
+            : d.fecha < '2026-11-10'
+              ? 9_300_000
+              : d.fecha < '2026-11-30'
+                ? 11_300_000
+                : d.fecha < '2026-12-01'
+                  ? 17_150_000
+                  : 15_650_000;
+        expect(d).toEqual({ fecha: d.fecha, saldo: esperado });
+      }
+      expect(estado.minimo).toEqual({ fecha: '2026-11-08', saldo: 9_300_000 });
+      expect(estado.dineroLibre).toBe(5_300_000);
+      // El arriendo del 1-nov no cuenta (≤ punto de partida); los servicios del 8-dic quedan fuera.
+      expect(estado.obligacionesPendientes).toEqual([
+        {
+          obligacionId: 'servicios',
+          tipo: 'mensual',
+          nombre: 'Servicios',
+          clave: '2026-11',
+          fecha: '2026-11-08',
+          fechaProyectada: '2026-11-08',
+          monto: 300_000,
+          vencida: false,
+          vehiculoId: null,
+          reservaLiberada: 0,
+        },
+        {
+          obligacionId: 'arriendo',
+          tipo: 'mensual',
+          nombre: 'Arriendo',
+          clave: '2026-12',
+          fecha: '2026-12-01',
+          fechaProyectada: '2026-12-01',
+          monto: 1_500_000,
+          vencida: false,
+          vehiculoId: null,
+          reservaLiberada: 0,
+        },
+      ]);
+      expect(estado.obligacionesVencidas).toEqual([]);
+    });
+
+    it('B. anual dentro del Horizonte: el prorrateo entra en la reserva que se libera', () => {
+      const hechos: Hechos = {
+        ...casoBase,
+        saldoInicial: { monto: 10_000_000, fecha: '2026-11-01' },
+        obligaciones: [
+          { ...anual('tecno', 'Tecnomecánica', 1_200_000, '2026-12-01', 1_000_000, '2026-11-01'), vehiculoId: 'v1' },
+        ],
+      };
+      const estado = calculado(calcularEstado(hechos, HOY));
+      expect(estado.reservas).toEqual({ anual: 1_000_000, total: 1_000_000 });
+      expect(estado.aportesProgramados).toEqual([
+        { fecha: '2026-11-30', tipo: 'prorrateoAnual', obligacionId: 'tecno', monto: 100_000 },
+      ]);
+      expect(estado.obligacionesPendientes).toEqual([
+        {
+          obligacionId: 'tecno',
+          tipo: 'anual',
+          nombre: 'Tecnomecánica',
+          clave: '2026',
+          fecha: '2026-12-01',
+          fechaProyectada: '2026-12-01',
+          monto: 1_200_000,
+          vencida: false,
+          vehiculoId: 'v1',
+          reservaLiberada: 1_100_000,
+        },
+      ]);
+      expect(saldoEn(estado, '2026-11-03')).toBe(9_000_000);
+      expect(saldoEn(estado, '2026-11-10')).toBe(11_000_000);
+      expect(saldoEn(estado, '2026-11-30')).toBe(16_900_000);
+      expect(saldoEn(estado, '2026-12-01')).toBe(16_800_000);
+      expect(estado.minimo).toEqual({ fecha: '2026-11-03', saldo: 9_000_000 });
+      expect(estado.dineroLibre).toBe(5_000_000);
+    });
+
+    it('C. vencidas: se proyectan en hoy y la anual libera toda su reserva', () => {
+      const hechos: Hechos = {
+        ...casoBase,
+        saldoInicial: { monto: 10_000_000, fecha: '2026-11-05' },
+        obligaciones: [
+          anual('soat', 'SOAT', 1_200_000, '2026-11-08', 1_100_000, '2026-11-05'),
+          mensual('arriendo', 'Arriendo', 8, 1_500_000),
+        ],
+      };
+      const estado = calculado(calcularEstado(hechos, '2026-11-12'));
+      expect(estado.obligacionesVencidas.map((o) => [o.nombre, o.fecha, o.fechaProyectada])).toEqual([
+        ['Arriendo', '2026-11-08', '2026-11-12'],
+        ['SOAT', '2026-11-08', '2026-11-12'],
+      ]);
+      expect(estado.obligacionesVencidas.every((o) => o.vencida)).toBe(true);
+      expect(estado.reservas.anual).toBe(1_100_000);
+      expect(estado.obligacionesVencidas[1].reservaLiberada).toBe(1_100_000);
+      // 10M − 1,1M (reserva) + 2M (Pago 1 atrasado) − 1,5M − 1,2M + 1,1M (liberada).
+      expect(estado.saldoProyectado[0]).toEqual({ fecha: '2026-11-12', saldo: 9_300_000 });
+      expect(estado.minimo).toEqual({ fecha: '2026-11-12', saldo: 9_300_000 });
+      expect(estado.dineroLibre).toBe(5_300_000);
+      // El arriendo de diciembre sigue pendiente y no vencido.
+      expect(estado.obligacionesPendientes.at(-1)).toMatchObject({
+        nombre: 'Arriendo',
+        fecha: '2026-12-08',
+        vencida: false,
+      });
+    });
+
+    it('D. una ocurrencia entre la reserva y el saldo se asume pagada y reinicia la reserva', () => {
+      // f0 = 1-oct, ancla = 20-oct, fs = 1-nov, Pago 2 día 30: créditos el 30-oct (ya) y el 30-nov (Aporte).
+      const hechos: Hechos = {
+        ...casoBase,
+        saldoInicial: { monto: 10_000_000, fecha: '2026-11-01' },
+        obligaciones: [anual('soat', 'SOAT', 1_200_000, '2026-10-20', 500_000, '2026-10-01')],
+      };
+      const estado = calculado(calcularEstado(hechos, HOY));
+      expect(estado.obligacionesPendientes).toEqual([]);
+      // Reinicio a 0 el 20-oct y un prorrateo de 100.000 el 30-oct.
+      expect(estado.reservas.anual).toBe(100_000);
+      expect(estado.aportesProgramados.map((a) => [a.fecha, a.monto])).toEqual([['2026-11-30', 100_000]]);
+      expect(estado.saldoProyectado[0].saldo).toBe(9_900_000);
+    });
+
+    it('E. el prorrateo se redondea hacia arriba', () => {
+      const hechos: Hechos = {
+        ...casoBase,
+        obligaciones: [anual('x', 'X', 1_000_001, '2027-06-01', 0, HOY)],
+      };
+      const estado = calculado(calcularEstado(hechos, HOY));
+      expect(estado.aportesProgramados).toEqual([
+        { fecha: '2026-11-30', tipo: 'prorrateoAnual', obligacionId: 'x', monto: 83_334 },
+      ]);
+    });
+
+    it('F. mismo día: el prorrateo del Pago 2 se acredita antes de liberar', () => {
+      const hechos: Hechos = {
+        ...casoBase,
+        obligaciones: [anual('x', 'X', 1_200_000, '2026-11-30', 300_000, HOY)],
+      };
+      const estado = calculado(calcularEstado(hechos, HOY));
+      expect(estado.obligacionesPendientes[0]).toMatchObject({ fecha: '2026-11-30', reservaLiberada: 400_000 });
+      // 30-nov: +6M (Pago 2) − 100.000 (Aporte) − 1,2M + 400.000 (liberada).
+      expect(saldoEn(estado, '2026-11-30')).toBe(
+        10_000_000 - 300_000 + 2_000_000 + 6_000_000 - 100_000 - 1_200_000 + 400_000,
+      );
+      // Tras liberar, la reserva vuelve a 0: no hay más Aportes en el Horizonte.
+      expect(estado.aportesProgramados).toHaveLength(1);
+    });
+
+    it('G. los prorrateos ya acreditados suman a la reserva actual, sin Aporte', () => {
+      const hechos: Hechos = {
+        ...casoBase,
+        obligaciones: [anual('x', 'X', 1_200_000, '2027-06-01', 500_000, '2026-10-01')],
+      };
+      const estado = calculado(calcularEstado(hechos, HOY));
+      expect(estado.reservasAnuales).toEqual([{ obligacionId: 'x', reserva: 600_000 }]);
+      expect(estado.aportesProgramados.map((a) => a.fecha)).toEqual(['2026-11-30']);
+    });
+
+    it('G. un prorrateo con el Pago 2 atrasado usa la fecha esperada', () => {
+      // Pago 2 del 30-oct atrasado (saldo al 25-oct): el prorrateo del 30-oct ya se acreditó.
+      const hechos: Hechos = {
+        ...casoBase,
+        saldoInicial: { monto: 10_000_000, fecha: '2026-10-25' },
+        obligaciones: [anual('x', 'X', 1_200_000, '2027-06-01', 0, '2026-10-25')],
+      };
+      const estado = calculado(calcularEstado(hechos, HOY));
+      expect(estado.pagosAtrasados.map((p) => p.fecha)).toEqual(['2026-10-30']);
+      expect(estado.reservas.anual).toBe(100_000);
+    });
+
+    describe('H. bordes', () => {
+      it('una ocurrencia en hoy está pendiente pero no vencida', () => {
+        const hechos: Hechos = { ...casoBase, obligaciones: [mensual('m', 'M', 3, 100)] };
+        const estado = calculado(
+          calcularEstado({ ...hechos, saldoInicial: { monto: 1_000, fecha: '2026-11-02' } }, HOY),
+        );
+        expect(estado.obligacionesPendientes[0]).toMatchObject({ fecha: HOY, fechaProyectada: HOY, vencida: false });
+        expect(estado.obligacionesVencidas).toEqual([]);
+        expect(estado.saldoProyectado[0].saldo).toBe(900);
+      });
+
+      it('una ocurrencia en hoy+31 cuenta y una en hoy+32 no', () => {
+        // hoy+31 = 4-dic, hoy+32 = 5-dic.
+        const hechos: Hechos = {
+          ...casoBase,
+          obligaciones: [
+            mensual('a', 'A', 4, 100),
+            mensual('b', 'B', 5, 7),
+            anual('c', 'C', 1_200, '2026-12-05', 0, HOY),
+          ],
+        };
+        const estado = calculado(calcularEstado(hechos, HOY));
+        expect(estado.obligacionesPendientes.map((o) => o.fecha)).toEqual(['2026-11-04', '2026-11-05', '2026-12-04']);
+      });
+
+      it('una ocurrencia el mismo día del saldo inicial no cuenta', () => {
+        const hechos: Hechos = {
+          ...casoBase,
+          saldoInicial: { monto: 1_000, fecha: '2026-11-02' },
+          obligaciones: [mensual('m', 'M', 2, 100), anual('a', 'A', 1_200, '2026-11-02', 0, '2026-11-02')],
+        };
+        const estado = calculado(calcularEstado(hechos, HOY));
+        expect(estado.obligacionesPendientes.map((o) => o.fecha)).toEqual(['2026-12-02']);
+      });
+
+      it('una mensual del día 31 cae el 30 en noviembre', () => {
+        const hechos: Hechos = { ...casoBase, obligaciones: [mensual('m', 'M', 31, 100)] };
+        const estado = calculado(calcularEstado(hechos, HOY));
+        expect(estado.obligacionesPendientes.map((o) => [o.clave, o.fecha])).toEqual([['2026-11', '2026-11-30']]);
+      });
+
+      it('dos vencidas con la misma fecha y nombre se ordenan por id; reservasAnuales sigue el orden de los hechos', () => {
+        const hechos: Hechos = {
+          ...casoBase,
+          saldoInicial: { monto: 10_000_000, fecha: '2026-11-05' },
+          obligaciones: [
+            anual('b', 'B', 1_200, '2026-11-08', 100, '2026-11-05'),
+            anual('a', 'B', 1_200, '2026-11-08', 50, '2026-11-05'),
+          ],
+        };
+        const estado = calculado(calcularEstado(hechos, '2026-11-12'));
+        // Mismo nombre y fecha: desempata el id.
+        expect(estado.obligacionesVencidas.map((o) => [o.obligacionId, o.reservaLiberada])).toEqual([
+          ['a', 50],
+          ['b', 100],
+        ]);
+        expect(estado.reservasAnuales).toEqual([
+          { obligacionId: 'b', reserva: 100 },
+          { obligacionId: 'a', reserva: 50 },
+        ]);
+      });
+    });
+
+    it('todos los montos son enteros', () => {
+      const estado = calculado(calcularEstado(casoA, HOY));
+      const montos = [
+        estado.dineroLibre,
+        estado.reservas.total,
+        ...estado.saldoProyectado.map((d) => d.saldo),
+        ...estado.obligacionesPendientes.flatMap((o) => [o.monto, o.reservaLiberada]),
+        ...estado.aportesProgramados.map((a) => a.monto),
+      ];
+      expect(montos.every(Number.isInteger)).toBe(true);
+    });
+  });
+
   it('es pura: mismo resultado con los mismos datos y no muta los hechos', () => {
     const congelar = <T extends object>(o: T): T => Object.freeze(o);
     const hechos: Hechos = congelar({
       saldoInicial: congelar({ monto: 3_000_000, fecha: '2026-11-01' }),
       colchon: 500_000,
       pagos: congelar([congelar(pago(1, 10, 2_000_000)), congelar(pago(2, 30, 6_000_000))]),
+      vehiculos: congelar([congelar({ id: 'v1', nombre: 'Moto azul' })]),
+      obligaciones: congelar([
+        congelar(mensual('servicios', 'Servicios', 8, 300_000)),
+        congelar({
+          ...anual('soat', 'SOAT', 1_800_000, '2026-12-01', 400_000, '2026-11-01'),
+          vehiculoId: 'v1',
+          reservaInicial: congelar({ monto: 400_000, fecha: '2026-11-01' }),
+        }),
+      ]),
     });
     const copia = JSON.parse(JSON.stringify(hechos));
     const a = calcularEstado(hechos, HOY);

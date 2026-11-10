@@ -7,4 +7,14 @@ export const textosAjustes = {
   resumenSaldoYColchon: (saldo: string, fecha: string, colchon: string) =>
     `Saldo ${saldo} al ${fecha} · Colchón ${colchon}`,
   resumenColchon: (colchon: string) => `Colchón ${colchon}`,
+  vehiculos: 'Vehículos',
+  obligaciones: 'Obligaciones',
+  resumenVehiculos: (nombres: string[]) => (nombres.length === 0 ? 'Sin vehículos' : nombres.join(', ')),
+  resumenObligaciones: (mensuales: number, anuales: number) => {
+    const partes = [
+      mensuales > 0 ? `${mensuales} ${mensuales === 1 ? 'mensual' : 'mensuales'}` : null,
+      anuales > 0 ? `${anuales} ${anuales === 1 ? 'anual' : 'anuales'}` : null,
+    ].filter((p) => p !== null);
+    return partes.length === 0 ? 'Sin obligaciones' : partes.join(' · ');
+  },
 } as const;

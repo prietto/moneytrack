@@ -9,6 +9,9 @@ export const textosInicio = {
   faltante: (monto: string, dia: string) => `Ojo: el ${dia} te faltarían ${monto} para mantener tu Colchón.`,
   pagoAtrasado: (numero: number, dia: string) =>
     `Tu Pago ${numero} del ${dia} aún no está confirmado; lo cuento como si llegara hoy.`,
+  obligacionesVencidas: 'Obligaciones vencidas',
+  obligacionVencida: (nombre: string, monto: string, dia: string) =>
+    `${nombre}: ${monto}, venció el ${dia}. Lo cuento como si lo pagaras hoy.`,
   accesos: {
     registro: 'Registrar un gasto',
     camara: 'Fotografiar una factura',

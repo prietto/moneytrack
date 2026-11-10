@@ -63,7 +63,13 @@ describe('useHechos', () => {
 
   it('recarga cuando se avisa un cambio', async () => {
     const { result } = await renderHook(() => useHechos());
-    const nuevos = { saldoInicial: { monto: 1, fecha: '2026-11-05' }, colchon: 0, pagos: [] };
+    const nuevos = {
+      saldoInicial: { monto: 1, fecha: '2026-11-05' },
+      colchon: 0,
+      pagos: [],
+      vehiculos: [],
+      obligaciones: [],
+    };
     cargarMock.mockReturnValueOnce(nuevos);
 
     await act(async () => avisarCambio());
@@ -73,7 +79,13 @@ describe('useHechos', () => {
   });
 
   it('si hubo un cambio entre la carga del render y la suscripción, recarga', async () => {
-    const nuevos = { saldoInicial: { monto: 1, fecha: '2026-11-05' }, colchon: 0, pagos: [] };
+    const nuevos = {
+      saldoInicial: { monto: 1, fecha: '2026-11-05' },
+      colchon: 0,
+      pagos: [],
+      vehiculos: [],
+      obligaciones: [],
+    };
     let primera = true;
     cargarMock.mockImplementation(() => {
       // Simula un commit justo después de la carga del render, antes del efecto.
@@ -199,7 +211,7 @@ describe('caché por versión (N+1 cargas)', () => {
   });
 
   it('si hay un cambio durante la carga, esos hechos no quedan como los de la versión nueva', () => {
-    const nuevos = { saldoInicial: null, colchon: 7, pagos: [] };
+    const nuevos = { saldoInicial: null, colchon: 7, pagos: [], vehiculos: [], obligaciones: [] };
     cargarMock.mockImplementationOnce((db) => {
       avisarCambio();
       return jest.requireActual('./queries/cargar-hechos').cargarHechos(db);

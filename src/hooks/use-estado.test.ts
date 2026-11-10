@@ -21,6 +21,8 @@ const configurados: Hechos = {
     { id: 'p1', numero: 1, dia: 10, montoEsperado: 1 },
     { id: 'p2', numero: 2, dia: 30, montoEsperado: 1 },
   ],
+  vehiculos: [],
+  obligaciones: [],
 };
 
 beforeEach(() => {

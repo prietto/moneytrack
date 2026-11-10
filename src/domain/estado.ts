@@ -28,6 +28,28 @@ export type OcurrenciaPago = {
   pagoAtrasado: boolean;
 };
 
+/** Una ocurrencia pendiente de una Obligación (AD-5). */
+export type OcurrenciaObligacion = {
+  obligacionId: string;
+  tipo: 'mensual' | 'anual';
+  nombre: string;
+  /** `'YYYY-MM'` o `'YYYY'` (AD-5): con `obligacionId` identifica la ocurrencia que cerrará H2.4. */
+  clave: string;
+  /** Fecha de vencimiento de la ocurrencia. */
+  fecha: string;
+  /** `fecha`, o `hoy` si está vencida. */
+  fechaProyectada: string;
+  monto: number;
+  vencida: boolean;
+  vehiculoId: string | null;
+  /** Anual: la reserva que se libera al proyectarla (AD-20). Mensual: 0. */
+  reservaLiberada: number;
+};
+
+/** Un Aporte programado (AD-20): dinero que se aparta en una fecha futura del Horizonte. */
+export type AporteProgramado = { fecha: string; tipo: 'prorrateoAnual'; obligacionId: string; monto: number };
+// H1.6 agrega 'fondo' y H1.7 'meta' a `tipo`.
+
 export type Estado =
   /** Falta configuración mínima: no hay cifras (nada inventado). `faltan` no está vacío. */
   | { tipo: 'sinConfigurar'; hoy: string; faltan: Faltante[] }
@@ -45,4 +67,17 @@ export type Estado =
       pagosEsperados: OcurrenciaPago[];
       /** El subconjunto con `pagoAtrasado` (AD-1: "Pagos atrasados"), en el mismo orden. */
       pagosAtrasados: OcurrenciaPago[];
+      /** Las que entran en la proyección, ordenadas por (fechaProyectada, fecha, nombre, obligacionId). */
+      obligacionesPendientes: OcurrenciaObligacion[];
+      /** El subconjunto con `vencida` (AD-1: "Obligaciones vencidas"), en el mismo orden. */
+      obligacionesVencidas: OcurrenciaObligacion[];
+      /**
+       * Reservas actuales (en `hoy`), restadas del Saldo proyectado desde el
+       * primer día. H1.6 suma el fondo y H1.7 la Meta.
+       */
+      reservas: { anual: number; total: number };
+      /** La reserva actual de cada Obligación anual, en el orden de los hechos. */
+      reservasAnuales: { obligacionId: string; reserva: number }[];
+      /** En `(hoy, hoy+31]`, ordenados por (fecha, obligacionId). */
+      aportesProgramados: AporteProgramado[];
     };

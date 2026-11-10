@@ -12,7 +12,15 @@ jest.mock('@/hooks/use-configuracion', () => ({ useConfiguracion: jest.fn() }));
 const ejecutarMock = jest.mocked(ejecutar);
 const useConfiguracionMock = jest.mocked(useConfiguracion);
 
-const vacia: Configuracion = { pago1: null, pago2: null, saldoInicial: null, colchon: null, colchonSugerido: 4_000_000 };
+const vacia: Configuracion = {
+  pago1: null,
+  pago2: null,
+  saldoInicial: null,
+  colchon: null,
+  colchonSugerido: 4_000_000,
+  vehiculos: [],
+  obligaciones: [],
+};
 
 beforeEach(() => {
   jest.clearAllMocks();

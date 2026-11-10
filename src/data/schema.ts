@@ -59,3 +59,40 @@ export const ajustes = sqliteTable('ajustes', {
   saldoInicialFecha: text('saldo_inicial_fecha'), // 'YYYY-MM-DD'
   colchon: integer('colchon'),
 });
+
+/**
+ * Vehículos (FR5): solo el nombre, sin repetirse entre los vigentes (lo
+ * garantiza el comando, sin distinguir mayúsculas). Gastos (Épica 2) y
+ * Obligaciones anuales los referencian por `id`.
+ */
+export const vehiculos = sqliteTable('vehiculos', {
+  ...columnasComunes,
+  nombre: text('nombre').notNull(),
+});
+
+export const tiposObligacion = ['mensual', 'anual'] as const;
+export type TipoObligacion = (typeof tiposObligacion)[number];
+
+/**
+ * Definición de las Obligaciones (FR3, AD-5). Nada derivado (AD-2): ni
+ * ocurrencias, ni reserva acumulada, ni "vencida"; las calcula domain/.
+ *
+ * Las columnas de cada tipo admiten null: la mensual usa `monto` y `dia`; la
+ * anual `monto`, `fechaVencimiento`, `vehiculoId` (opcional) y la reserva
+ * inicial. Las cuotas de Deuda (H1.7) no tendrán monto ni día propios.
+ *
+ * Sin `.references()`: SQLite no tiene `PRAGMA foreign_keys` activo en la app
+ * y la restauración (H7) reemplaza tablas completas. La integridad la
+ * garantizan los comandos y `cargarHechos` (huérfano → null).
+ */
+export const obligaciones = sqliteTable('obligaciones', {
+  ...columnasComunes,
+  tipo: text('tipo', { enum: tiposObligacion }).notNull(),
+  nombre: text('nombre').notNull(),
+  monto: integer('monto'), // null solo en cuotas de Deuda (H1.7, AD-5)
+  dia: integer('dia'), // mensual, 1..31
+  fechaVencimiento: text('fecha_vencimiento'), // anual, 'YYYY-MM-DD'
+  vehiculoId: text('vehiculo_id'), // anual, opcional
+  reservaInicialMonto: integer('reserva_inicial_monto'), // anual
+  reservaInicialFecha: text('reserva_inicial_fecha'), // anual, 'YYYY-MM-DD'
+});

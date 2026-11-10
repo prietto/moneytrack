@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 
 import Inicio from '@/app/(tabs)/index';
 import { colores } from '@/components/tema';
-import type { Estado, OcurrenciaPago } from '@/domain/estado';
+import type { Estado, OcurrenciaObligacion, OcurrenciaPago } from '@/domain/estado';
 import { useEstado } from '@/hooks/use-estado';
 import { textosInicio } from '@/textos/inicio';
 
@@ -25,6 +25,11 @@ function calculado(cambios: Partial<Extract<Estado, { tipo: 'calculado' }>> = {}
     dineroLibre: 6_000_000,
     pagosEsperados: [],
     pagosAtrasados: [],
+    obligacionesPendientes: [],
+    obligacionesVencidas: [],
+    reservas: { anual: 0, total: 0 },
+    reservasAnuales: [],
+    aportesProgramados: [],
     ...cambios,
   };
 }
@@ -106,6 +111,36 @@ describe('pantalla principal', () => {
       );
       await render(<Inicio />);
       expect(screen.getByText(textosInicio.pagoAtrasado(1, '10 de nov.'))).toBeTruthy();
+    });
+
+    it('con Obligaciones vencidas: el título y una línea por vencida, con nombre, monto y fecha', async () => {
+      const vencida = (nombre: string, monto: number, fecha: string): OcurrenciaObligacion => ({
+        obligacionId: nombre,
+        tipo: 'mensual',
+        nombre,
+        clave: fecha.slice(0, 7),
+        fecha,
+        fechaProyectada: '2026-11-12',
+        monto,
+        vencida: true,
+        vehiculoId: null,
+        reservaLiberada: 0,
+      });
+      const vencidas = [vencida('Arriendo', 1_500_000, '2026-11-08'), vencida('Agua', 80_000, '2025-12-30')];
+      useEstadoMock.mockReturnValue(
+        calculado({ hoy: '2026-11-12', obligacionesPendientes: vencidas, obligacionesVencidas: vencidas }),
+      );
+      await render(<Inicio />);
+      expect(screen.getByRole('header', { name: textosInicio.obligacionesVencidas })).toBeTruthy();
+      expect(screen.getByText(textosInicio.obligacionVencida('Arriendo', '1.500.000', '8 de nov.'))).toBeTruthy();
+      // De otro año: con el año.
+      expect(screen.getByText(textosInicio.obligacionVencida('Agua', '80.000', '30 de dic. de 2025'))).toBeTruthy();
+    });
+
+    it('sin Obligaciones vencidas no hay título', async () => {
+      useEstadoMock.mockReturnValue(calculado());
+      await render(<Inicio />);
+      expect(screen.queryByText(textosInicio.obligacionesVencidas)).toBeNull();
     });
 
     it('los accesos rápidos no aparecen (ninguno disponible en H1.4)', async () => {

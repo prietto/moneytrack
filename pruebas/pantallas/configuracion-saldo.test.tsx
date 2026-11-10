@@ -15,7 +15,15 @@ const ejecutarMock = jest.mocked(ejecutar);
 const useConfiguracionMock = jest.mocked(useConfiguracion);
 const HOY = '2026-11-05';
 
-const vacia: Configuracion = { pago1: null, pago2: null, saldoInicial: null, colchon: null, colchonSugerido: 4_000_000 };
+const vacia: Configuracion = {
+  pago1: null,
+  pago2: null,
+  saldoInicial: null,
+  colchon: null,
+  colchonSugerido: 4_000_000,
+  vehiculos: [],
+  obligaciones: [],
+};
 
 beforeEach(() => {
   jest.clearAllMocks();

@@ -38,8 +38,8 @@ function EstadoVacio({ faltan }: { faltan: Extract<Estado, { tipo: 'sinConfigura
 
 /**
  * Pantalla principal (FR13, UX-DR3). No calcula nada (AD-1): solo elige qué
- * mostrar del Estado. Meta, fondo y Obligaciones llegan en H1.5–H1.7 y la
- * Épica 3, debajo de lo que hay.
+ * mostrar del Estado. Meta y fondo llegan en H1.6–H1.7 y la Épica 3, debajo
+ * de lo que hay.
  */
 export default function Inicio() {
   const estado = useEstado();
@@ -73,6 +73,20 @@ export default function Inicio() {
         <Text style={estilos.etiqueta}>{t.saldoCalculado}</Text>
         <Text style={estilos.saldo}>{formatearDinero(estado.saldoCalculado)}</Text>
       </View>
+
+      {/* Sin vencidas no se muestra nada, ni el título. */}
+      {estado.obligacionesVencidas.length > 0 && (
+        <View style={estilos.bloque}>
+          <Text accessibilityRole="header" style={estilos.etiqueta}>
+            {t.obligacionesVencidas}
+          </Text>
+          {estado.obligacionesVencidas.map((o) => (
+            <Text key={`${o.obligacionId}-${o.clave}`} style={[estilos.texto, estilos.peligro]}>
+              {t.obligacionVencida(o.nombre, formatearDinero(o.monto), formatearFechaCorta(o.fecha, estado.hoy))}
+            </Text>
+          ))}
+        </View>
+      )}
 
       {estado.pagosAtrasados.map((p) => (
         <Text key={`${p.pagoId}-${p.clave}`} style={estilos.texto}>

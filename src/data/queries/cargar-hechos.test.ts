@@ -2,7 +2,7 @@
 import { hechosVacios } from '@/domain/hechos';
 
 import { crearBaseDePrueba } from '../pruebas/base-en-memoria';
-import { ajustes, pagos } from '../schema';
+import { ajustes, obligaciones, pagos, vehiculos } from '../schema';
 import { cargarHechos } from './cargar-hechos';
 
 const AHORA = '2026-11-05T15:00:00.000Z';
@@ -31,6 +31,8 @@ describe('cargarHechos', () => {
     expect(hechos).not.toBe(hechosVacios);
     expect(hechos.pagos).not.toBe(hechosVacios.pagos);
     expect(cargarHechos(db).pagos).not.toBe(hechos.pagos);
+    expect(hechos.vehiculos).not.toBe(hechosVacios.vehiculos);
+    expect(hechos.obligaciones).not.toBe(hechosVacios.obligaciones);
   });
 
   it('con filas devuelve los Hechos esperados, con los Pagos ordenados por número', () => {
@@ -52,6 +54,8 @@ describe('cargarHechos', () => {
         { id: 'p1', numero: 1, dia: 10, montoEsperado: 2_000_000 },
         { id: 'p2', numero: 2, dia: 30, montoEsperado: 6_000_000 },
       ],
+      vehiculos: [],
+      obligaciones: [],
     });
   });
 
@@ -96,5 +100,85 @@ describe('cargarHechos', () => {
       ])
       .run();
     expect(cargarHechos(db).colchon).toBe(1);
+  });
+});
+
+describe('cargarHechos: Vehículos y Obligaciones', () => {
+  const DESPUES = '2026-11-06T15:00:00.000Z';
+  const anual = {
+    tipo: 'anual' as const,
+    nombre: 'SOAT',
+    monto: 1_800_000,
+    fechaVencimiento: '2027-03-15',
+    vehiculoId: 'v1',
+    reservaInicialMonto: 400_000,
+    reservaInicialFecha: '2026-11-03',
+  };
+
+  it('lee los dos tipos y los Vehículos vigentes, en orden de creación', () => {
+    const { db } = abrir();
+    db.insert(vehiculos)
+      .values([
+        { id: 'v2', createdAt: DESPUES, updatedAt: DESPUES, nombre: 'Carro' },
+        { id: 'v1', ...marcas, nombre: 'Moto azul' },
+      ])
+      .run();
+    db.insert(obligaciones)
+      .values([
+        { id: 'o2', createdAt: DESPUES, updatedAt: DESPUES, ...anual },
+        { id: 'o1', ...marcas, tipo: 'mensual', nombre: 'Arriendo', monto: 1_500_000, dia: 1 },
+      ])
+      .run();
+    const hechos = cargarHechos(db);
+    expect(hechos.vehiculos).toEqual([
+      { id: 'v1', nombre: 'Moto azul' },
+      { id: 'v2', nombre: 'Carro' },
+    ]);
+    expect(hechos.obligaciones).toEqual([
+      { id: 'o1', tipo: 'mensual', nombre: 'Arriendo', monto: 1_500_000, dia: 1 },
+      {
+        id: 'o2',
+        tipo: 'anual',
+        nombre: 'SOAT',
+        monto: 1_800_000,
+        fechaVencimiento: '2027-03-15',
+        vehiculoId: 'v1',
+        reservaInicial: { monto: 400_000, fecha: '2026-11-03' },
+      },
+    ]);
+  });
+
+  it('excluye los Vehículos y Obligaciones borrados', () => {
+    const { db } = abrir();
+    db.insert(vehiculos).values({ id: 'v1', ...marcas, deletedAt: AHORA, nombre: 'Moto' }).run();
+    db.insert(obligaciones)
+      .values({ id: 'o1', ...marcas, deletedAt: AHORA, tipo: 'mensual', nombre: 'A', monto: 1, dia: 1 })
+      .run();
+    expect(cargarHechos(db)).toMatchObject({ vehiculos: [], obligaciones: [] });
+  });
+
+  it.each([
+    ['mensual sin monto', { tipo: 'mensual' as const, nombre: 'A', monto: null, dia: 1 }],
+    ['mensual sin día', { tipo: 'mensual' as const, nombre: 'A', monto: 1, dia: null }],
+    ['anual sin monto', { ...anual, monto: null }],
+    ['anual sin vencimiento', { ...anual, fechaVencimiento: null }],
+    ['anual sin monto de reserva', { ...anual, reservaInicialMonto: null }],
+    ['anual sin fecha de reserva', { ...anual, reservaInicialFecha: null }],
+  ])('descarta una fila incompleta (%s) sin lanzar', (_caso, valores) => {
+    const { db } = abrir();
+    db.insert(obligaciones).values({ id: 'o1', ...marcas, ...valores }).run();
+    expect(cargarHechos(db).obligaciones).toEqual([]);
+  });
+
+  it('un vehiculoId huérfano o de un Vehículo borrado pasa a null', () => {
+    const { db } = abrir();
+    db.insert(vehiculos).values({ id: 'v1', ...marcas, deletedAt: AHORA, nombre: 'Moto' }).run();
+    db.insert(obligaciones)
+      .values([
+        { id: 'o1', ...marcas, ...anual },
+        { id: 'o2', ...marcas, ...anual, vehiculoId: 'nunca-existio' },
+      ])
+      .run();
+    expect(cargarHechos(db).obligaciones.map((o) => (o.tipo === 'anual' ? o.vehiculoId : 'x'))).toEqual([null, null]);
   });
 });

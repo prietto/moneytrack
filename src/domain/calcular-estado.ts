@@ -1,6 +1,7 @@
 import type { Estado, Faltante, OcurrenciaPago, SaldoDelDia } from './estado';
 import { sumarDias } from './fechas';
 import type { Hechos, PagoDefinido } from './hechos';
+import { obligacionesEnHorizonte } from './obligaciones';
 import { ocurrenciasMensuales } from './ocurrencias';
 
 /** El Horizonte va de `hoy` a `hoy + HORIZONTE_DIAS`, ambos inclusive (AD-5). */
@@ -67,13 +68,26 @@ export function calcularEstado(hechos: Hechos, hoy: string): Estado {
 
   const pagosEsperados = ocurrenciasDePagos(hechos.pagos, saldoInicial.fecha, hoy);
 
+  // `faltantes` garantiza el Pago 2: en su fecha se acreditan los prorrateos (AD-20).
+  const diaPago2 = hechos.pagos.find((p) => p.numero === 2)?.dia ?? 0;
+  const obligaciones = obligacionesEnHorizonte(hechos.obligaciones, diaPago2, {
+    fs: saldoInicial.fecha,
+    hoy,
+    hasta: sumarDias(hoy, HORIZONTE_DIAS),
+  });
+  const reservaAnual = obligaciones.reservasAnuales.reduce((suma, r) => suma + r.reserva, 0);
+  const reservas = { anual: reservaAnual, total: reservaAnual };
+
   // Flujo esperado por fecha proyectada; luego un solo recorrido acumulando.
   const flujoPorDia = new Map<string, number>();
-  for (const p of pagosEsperados) {
-    flujoPorDia.set(p.fechaProyectada, (flujoPorDia.get(p.fechaProyectada) ?? 0) + p.monto);
-  }
+  const sumar = (fecha: string, monto: number) => flujoPorDia.set(fecha, (flujoPorDia.get(fecha) ?? 0) + monto);
+  for (const p of pagosEsperados) sumar(p.fechaProyectada, p.monto);
+  for (const o of obligaciones.pendientes) sumar(o.fechaProyectada, o.reservaLiberada - o.monto);
+  for (const a of obligaciones.aportes) sumar(a.fecha, -a.monto);
+
   const saldoProyectado: SaldoDelDia[] = [];
-  let acumulado = saldoCalculado;
+  // Las Reservas actuales no están disponibles desde el primer día.
+  let acumulado = saldoCalculado - reservas.total;
   for (let i = 0; i <= HORIZONTE_DIAS; i++) {
     const fecha = sumarDias(hoy, i);
     acumulado += flujoPorDia.get(fecha) ?? 0;
@@ -95,5 +109,10 @@ export function calcularEstado(hechos: Hechos, hoy: string): Estado {
     dineroLibre: minimo.saldo - colchon,
     pagosEsperados,
     pagosAtrasados: pagosEsperados.filter((p) => p.pagoAtrasado),
+    obligacionesPendientes: obligaciones.pendientes,
+    obligacionesVencidas: obligaciones.pendientes.filter((o) => o.vencida),
+    reservas,
+    reservasAnuales: obligaciones.reservasAnuales,
+    aportesProgramados: obligaciones.aportes,
   };
 }

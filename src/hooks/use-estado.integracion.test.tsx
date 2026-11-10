@@ -1,8 +1,11 @@
 import { act, renderHook } from '@testing-library/react-native';
 
+import { borrarObligacion } from '@/data/commands/borrar-obligacion';
 import { configurarPagos } from '@/data/commands/configurar-pagos';
 import { definirComando } from '@/data/commands/definir-comando';
+import { guardarObligacion } from '@/data/commands/guardar-obligacion';
 import { guardarSaldoInicialYColchon } from '@/data/commands/guardar-saldo-y-colchon';
+import { guardarVehiculo } from '@/data/commands/guardar-vehiculo';
 // Prueba de integración: sustituye data/db por la base en memoria (AD-3 aplica a la app, no a esta prueba).
 // eslint-disable-next-line no-restricted-imports
 import { obtenerDb } from '@/data/db';
@@ -108,5 +111,81 @@ describe('ejecutar → useEstado (integración)', () => {
     if (result.current.tipo === 'calculado') {
       expect(result.current.pagosEsperados.map((p) => p.fecha)).toEqual(['2026-11-10', '2026-11-30']);
     }
+  });
+
+  it('de punta a punta: Vehículo y Obligaciones → vencida, reserva anual y Dinero libre; borrar devuelve el Estado anterior', async () => {
+    // hoy = 2026-11-12; saldo 10M al 5-nov; Colchón 4M; Pagos día 10 (atrasado) y 30.
+    jest.mocked(hoy).mockReturnValue('2026-11-12');
+    const { result } = await renderHook(() => useEstado());
+
+    await act(async () => {
+      ejecutar(
+        configurarPagos({ pago1: { dia: 10, montoEsperado: 2_000_000 }, pago2: { dia: 30, montoEsperado: 6_000_000 } }),
+      );
+      ejecutar(
+        guardarSaldoInicialYColchon({ monto: 10_000_000, fecha: '2026-11-05', colchon: 4_000_000, hoy: '2026-11-12' }),
+      );
+    });
+    const anterior = result.current;
+    // Mínimo hoy: 10M + 2M (Pago 1 atrasado) − 4M.
+    expect(anterior).toMatchObject({ tipo: 'calculado', dineroLibre: 8_000_000 });
+
+    let vehiculoId = '';
+    let arriendoId = '';
+    let soatId = '';
+    await act(async () => {
+      const vehiculo = ejecutar(guardarVehiculo({ id: null, nombre: 'Moto azul' }));
+      vehiculoId = vehiculo.ok ? vehiculo.valor : '';
+      const arriendo = ejecutar(
+        guardarObligacion({ id: null, tipo: 'mensual', nombre: 'Arriendo', monto: 1_500_000, dia: 8 }, '2026-11-12'),
+      );
+      arriendoId = arriendo.ok ? arriendo.valor : '';
+      const soat = ejecutar(
+        guardarObligacion(
+          {
+            id: null,
+            tipo: 'anual',
+            nombre: 'SOAT',
+            monto: 1_200_000,
+            fechaVencimiento: '2027-03-15',
+            vehiculoId,
+            reservaInicial: { monto: 600_000, fecha: '2026-11-05' },
+          },
+          '2026-11-12',
+        ),
+      );
+      soatId = soat.ok ? soat.valor : '';
+      expect([vehiculo.ok, arriendo.ok, soat.ok]).toEqual([true, true, true]);
+    });
+
+    const estado = result.current;
+    if (estado.tipo !== 'calculado') throw new Error('se esperaba calculado');
+    // El arriendo del 8-nov (posterior al saldo del 5-nov) está vencido y se cuenta hoy.
+    expect(estado.obligacionesVencidas).toEqual([
+      expect.objectContaining({
+        obligacionId: arriendoId,
+        nombre: 'Arriendo',
+        fecha: '2026-11-08',
+        fechaProyectada: '2026-11-12',
+      }),
+    ]);
+    // Reserva anual 600.000; el prorrateo de 100.000 se aparta el 30-nov.
+    expect(estado.reservas).toEqual({ anual: 600_000, total: 600_000 });
+    expect(estado.aportesProgramados).toEqual([expect.objectContaining({ fecha: '2026-11-30', monto: 100_000 })]);
+    // Hoy: 10M − 600.000 + 2M − 1,5M = 9,9M; es el mínimo. Dinero libre = 9,9M − 4M.
+    expect(estado.minimo).toEqual({ fecha: '2026-11-12', saldo: 9_900_000 });
+    expect(estado.dineroLibre).toBe(5_900_000);
+
+    // Sin el arriendo: 10M − 600.000 + 2M = 11,4M hoy; Dinero libre 7,4M.
+    await act(async () => {
+      expect(ejecutar(borrarObligacion(arriendoId)).ok).toBe(true);
+    });
+    expect(result.current).toMatchObject({ obligacionesVencidas: [], dineroLibre: 7_400_000 });
+
+    // Sin Obligaciones, el Estado vuelve a ser el de antes (el Vehículo no entra en el cálculo).
+    await act(async () => {
+      expect(ejecutar(borrarObligacion(soatId)).ok).toBe(true);
+    });
+    expect(result.current).toEqual(anterior);
   });
 });

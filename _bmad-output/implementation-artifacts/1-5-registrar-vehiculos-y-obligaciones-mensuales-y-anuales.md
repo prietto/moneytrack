@@ -1,6 +1,10 @@
+---
+baseline_commit: 8294cd4c92337fa0cfe857cc9086eea1da6c7977
+---
+
 # Story 1.5: Registrar Vehículos y Obligaciones mensuales y anuales
 
-Status: ready-for-dev
+Status: review
 
 <!-- Nota: la validación es opcional. Ejecutar validate-create-story para un control de calidad antes de dev-story. -->
 
@@ -30,8 +34,8 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
 
 ## Tasks / Subtasks
 
-- [ ] **T1. Ocurrencias anuales puras (AC: 3)**
-  - [ ] En `src/domain/ocurrencias.ts` agrega, sin tocar `ocurrenciasMensuales`:
+- [x] **T1. Ocurrencias anuales puras (AC: 3)**
+  - [x] En `src/domain/ocurrencias.ts` agrega, sin tocar `ocurrenciasMensuales`:
     ```ts
     /** Ocurrencias anuales del mes `mes` (1..12) y día `dia`, con fecha en [desde, hasta], en orden. clave = 'YYYY'. */
     export function ocurrenciasAnuales(mes: number, dia: number, desde: string, hasta: string): Ocurrencia[];
@@ -39,10 +43,10 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
     - La fecha de cada año sale de `fechaEnMes(\`${anio}-${mm}\`, dia)`: el 29-feb cae el 28 en un año no bisiesto (AD-5).
     - Es total: con `mes` fuera de `1..12`, `dia` fuera de `1..31` o no entero, fechas inválidas o `desde > hasta`, devuelve `[]`.
     - El tipo `Ocurrencia` se mantiene: `clave` es `'YYYY'` aquí.
-  - [ ] Pruebas en `ocurrencias.test.ts`: un rango de tres años; el ancla `2028-02-29` → `2028-02-29`, `2029-02-28`, `2032-02-29`; bordes `desde`/`hasta` inclusivos; un rango sin ocurrencias; argumentos inválidos → `[]`.
+  - [x] Pruebas en `ocurrencias.test.ts`: un rango de tres años; el ancla `2028-02-29` → `2028-02-29`, `2029-02-28`, `2032-02-29`; bordes `desde`/`hasta` inclusivos; un rango sin ocurrencias; argumentos inválidos → `[]`.
 
-- [ ] **T2. Entrada y validación puras (AC: 1, 2, 3)**
-  - [ ] En `src/domain/entrada.ts` agrega (con el patrón `erroresX` + `validarX` de H1.4):
+- [x] **T2. Entrada y validación puras (AC: 1, 2, 3)**
+  - [x] En `src/domain/entrada.ts` agrega (con el patrón `erroresX` + `validarX` de H1.4):
     - `NOMBRE_MAXIMO = 40` y `normalizarNombre(texto)`: `trim()` y espacios internos colapsados a uno. `mismoNombre(a, b)` compara `normalizarNombre(x).toLowerCase()` (sin `Intl` ni `localeCompare`).
     - **Vehículo:** `erroresVehiculo({ nombre }, existentes: { id: string; nombre: string }[], idPropio: string | null)` → `{ nombre?: 'nombreVacio' | 'nombreLargo' | 'nombreRepetido' }`. `nombreRepetido` ignora el propio `id` al editar.
     - **Obligación mensual:** `erroresObligacionMensual({ nombre, monto, dia })` → `nombreVacio | nombreLargo`, `montoInvalido` (entero seguro **> 0**) y `diaInvalido`.
@@ -53,10 +57,10 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
       - `reservaFecha`: `fechaInvalida`, `fechaFutura` (> `hoy`) y `fechaAntigua` (< `hoy − 62`, salvo la guardada).
       - `vehiculoId`: `null` o el id de un Vehículo vigente (`vehiculoInvalido`).
     - Los `validarX` devuelven `Resultado<…, CodigoError>` con el primer error, como `validarPago`.
-  - [ ] Pruebas `it.each` en `entrada.test.ts` por cada código y borde: nombre de 40 y de 41 caracteres; `'  Moto  azul '` repite `'moto azul'`; editar sin cambiar el nombre no es repetido; monto 0; día 0 y 32; reserva igual al monto (válida) y mayor; fechas en `hoy − 62`, `hoy − 63`, `hoy + 366` y `hoy + 367`; fecha guardada antigua aceptada.
+  - [x] Pruebas `it.each` en `entrada.test.ts` por cada código y borde: nombre de 40 y de 41 caracteres; `'  Moto  azul '` repite `'moto azul'`; editar sin cambiar el nombre no es repetido; monto 0; día 0 y 32; reserva igual al monto (válida) y mayor; fechas en `hoy − 62`, `hoy − 63`, `hoy + 366` y `hoy + 367`; fecha guardada antigua aceptada.
 
-- [ ] **T3. `Hechos` y `Estado` (AC: 2, 3, 5–8)**
-  - [ ] `src/domain/hechos.ts` agrega:
+- [x] **T3. `Hechos` y `Estado` (AC: 2, 3, 5–8)**
+  - [x] `src/domain/hechos.ts` agrega:
     ```ts
     export type Vehiculo = { id: string; nombre: string };
     export type ObligacionMensual = { id: string; tipo: 'mensual'; nombre: string; monto: number; dia: number };
@@ -70,7 +74,7 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
     // Hechos += vehiculos: Vehiculo[]; obligaciones: ObligacionDefinida[]   (vigentes)
     ```
     Actualiza `hechosVacios` (`vehiculos: []`, `obligaciones: []`) y el comentario de cabecera.
-  - [ ] `src/domain/estado.ts`, en la rama `calculado`:
+  - [x] `src/domain/estado.ts`, en la rama `calculado`:
     ```ts
     export type OcurrenciaObligacion = {
       obligacionId: string; tipo: 'mensual' | 'anual'; nombre: string;
@@ -93,15 +97,15 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
     ```
     - Saldo calculado y Dinero libre siguen siendo enteros (AD-1). `sinConfigurar` no cambia: las Obligaciones no son configuración mínima.
 
-- [ ] **T4. `calcularEstado` con Obligaciones y reserva anual (AC: 5–8)**
-  - [ ] En `src/domain/calcular-estado.ts`, separa la lógica en funciones puras (p. ej. `ocurrenciasDeObligaciones` y `reservaAnual` en un archivo nuevo `src/domain/obligaciones.ts`) para que `calcularEstado` solo componga. Reglas:
+- [x] **T4. `calcularEstado` con Obligaciones y reserva anual (AC: 5–8)**
+  - [x] En `src/domain/calcular-estado.ts`, separa la lógica en funciones puras (p. ej. `ocurrenciasDeObligaciones` y `reservaAnual` en un archivo nuevo `src/domain/obligaciones.ts`) para que `calcularEstado` solo componga. Reglas:
     - **Mensuales:** `ocurrenciasMensuales(dia, saldoInicial.fecha + 1, hoy + 31)`. `fecha < hoy` → vencida, `fechaProyectada = hoy`.
     - **Anuales:** `ocurrenciasAnuales(mes, dia del ancla, max(fechaVencimiento, saldoInicial.fecha + 1), hoy + 31)`, con las mismas reglas de vencida.
     - **Reserva anual y Aportes programados:** sigue al pie de la letra "Algoritmo de la reserva anual" (Dev Notes).
     - Deja marcado con un comentario el punto donde H2.4 excluye la ocurrencia pagada `(obligacionId, clave)` y donde el pago reinicia la reserva.
     - **Saldo proyectado del día d** = Saldo calculado − `reservas.total` + Σ flujos con fecha ≤ d. Los flujos son: `+` Pagos esperados (H1.4), `−` monto de cada Obligación pendiente en su `fechaProyectada`, `+` `reservaLiberada` en esa misma fecha y `−` Aportes programados en su fecha. Sigue acumulando con el mapa por fecha en un solo recorrido (no hagas un filtro por día).
     - Mínimo y Dinero libre: sin cambios.
-  - [ ] Pruebas en `calcular-estado.test.ts` (y `obligaciones.test.ts` si separas). Actualiza las existentes con los campos nuevos (los `toEqual` de Estado completo los necesitan). Casos obligatorios, con los números ya calculados:
+  - [x] Pruebas en `calcular-estado.test.ts` (y `obligaciones.test.ts` si separas). Actualiza las existentes con los campos nuevos (los `toEqual` de Estado completo los necesitan). Casos obligatorios, con los números ya calculados:
     - **A. Addendum recortado a H1.5.** `hoy = 2026-11-03`; saldo 10.000.000 al `2026-11-03`; Colchón 4.000.000; Pago 1 día 10 por 2.000.000 y Pago 2 día 30 por 6.000.000; servicios mensual día 8 por 300.000; arriendo mensual día 1 por 1.500.000; SOAT anual por 1.800.000 con vencimiento `2027-03-15` y reserva inicial 400.000 al `2026-11-03`.
       - `reservas = { anual: 400_000, total: 400_000 }`. Aportes: `[{ fecha: '2026-11-30', monto: 150_000 }]`.
       - Saldo proyectado: 9.600.000 del 3 al 7-nov; 9.300.000 el 8 y el 9-nov; 11.300.000 del 10 al 29-nov; 17.150.000 el 30-nov; 15.650.000 del 1 al 4-dic.
@@ -127,8 +131,8 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
       - Sin Obligaciones → `reservas.total = 0`, listas vacías y las mismas cifras de H1.4.
     - **Invariantes:** todo entero; `Object.freeze` profundo de `hechos` (incluidas `obligaciones` y `vehiculos`); dos llamadas dan `toEqual`.
 
-- [ ] **T5. Tablas, migración y módulos dueños (AC: 1–4)**
-  - [ ] En `src/data/schema.ts`, con `...columnasComunes`:
+- [x] **T5. Tablas, migración y módulos dueños (AC: 1–4)**
+  - [x] En `src/data/schema.ts`, con `...columnasComunes`:
     ```ts
     export const vehiculos = sqliteTable('vehiculos', {
       ...columnasComunes,
@@ -150,18 +154,18 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
     ```
     - Nada derivado (AD-2): ni ocurrencias, ni reserva acumulada, ni "vencida".
     - **Sin `.references()`:** SQLite no tiene las FK activas en esta app (`PRAGMA foreign_keys` no se enciende) y la restauración de H7 reemplaza todas las tablas. La integridad la garantizan los comandos (T6).
-  - [ ] `npm run db:generar` → `drizzle/0002_*.sql`, `meta/0002_snapshot.json`, `meta/_journal.json` y `migrations.js`. **No** edites `0000` ni `0001`. Comprueba que el `when` de la 0002 sea mayor que el de la 0001 (1793970482285).
-  - [ ] Módulos dueños (AD-3). Reciben `tx` y `ctx` y nunca abren transacción:
+  - [x] `npm run db:generar` → `drizzle/0002_*.sql`, `meta/0002_snapshot.json`, `meta/_journal.json` y `migrations.js`. **No** edites `0000` ni `0001`. Comprueba que el `when` de la 0002 sea mayor que el de la 0001 (1793970482285).
+  - [x] Módulos dueños (AD-3). Reciben `tx` y `ctx` y nunca abren transacción:
     - `src/data/tablas/vehiculos.ts`: `leerVehiculosVigentes`, `insertarVehiculo`, `editarVehiculo` (`editarConRastro`) y `borrarVehiculo` (`borrarConRastro`).
     - `src/data/tablas/obligaciones.ts`: `leerObligacionesVigentes`, `insertarObligacion`, `editarObligacion` y `borrarObligacion`.
     - Pruebas `/** @jest-environment node */` con `crearBaseDePrueba()`: insertar, editar con rastro, edición sin cambios sin rastro y borrado lógico con rastro (`despues: null`).
 
-- [ ] **T6. Comandos (AC: 1–4)**
-  - [ ] `src/data/commands/guardar-vehiculo.ts`: `guardarVehiculo({ id, nombre }: { id: string | null; nombre: string }): ComandoDefinido<string>`, con `operacion: 'vehiculos.guardar'`. Devuelve el `id`.
+- [x] **T6. Comandos (AC: 1–4)**
+  - [x] `src/data/commands/guardar-vehiculo.ts`: `guardarVehiculo({ id, nombre }: { id: string | null; nombre: string }): ComandoDefinido<string>`, con `operacion: 'vehiculos.guardar'`. Devuelve el `id`.
     - Una transacción. Lee los vigentes y revalida con `validarVehiculo` (nombre normalizado y no repetido). Si falla, lanza `datosInvalidos`.
     - `id = null` → inserta con el nombre normalizado. Si no, edita (lanza `filaNoEncontrada` si no está vigente).
-  - [ ] `src/data/commands/borrar-vehiculo.ts`: `borrarVehiculo(id)`, `operacion: 'vehiculos.borrar'`. Si alguna Obligación vigente tiene ese `vehiculoId`, lanza `vehiculoEnUso` (rollback). Si no, hace borrado lógico con rastro.
-  - [ ] `src/data/commands/guardar-obligacion.ts`: `guardarObligacion(entrada, hoy)`, `operacion: 'obligaciones.guardar'`, que devuelve el `id`.
+  - [x] `src/data/commands/borrar-vehiculo.ts`: `borrarVehiculo(id)`, `operacion: 'vehiculos.borrar'`. Si alguna Obligación vigente tiene ese `vehiculoId`, lanza `vehiculoEnUso` (rollback). Si no, hace borrado lógico con rastro.
+  - [x] `src/data/commands/guardar-obligacion.ts`: `guardarObligacion(entrada, hoy)`, `operacion: 'obligaciones.guardar'`, que devuelve el `id`.
     ```ts
     type EntradaObligacion =
       | { id: string | null; tipo: 'mensual'; nombre: string; monto: number; dia: number }
@@ -172,8 +176,8 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
     - Al editar, si el `tipo` difiere del de la fila, lanza `tipoNoEditable`.
     - Escribe en `null` las columnas que no son de su tipo.
     - `hoy` llega como parámetro (el comando no lee el reloj); la pantalla lo pasa desde `useHoy()`.
-  - [ ] `src/data/commands/borrar-obligacion.ts`: `borrarObligacion(id)`, `operacion: 'obligaciones.borrar'`. Borrado lógico con rastro. (H2.4 decidirá qué pasa con sus ocurrencias pagadas.)
-  - [ ] Pruebas con base real y `ahora`/`nuevoId` fijos, como en `configurar-pagos.test.ts`:
+  - [x] `src/data/commands/borrar-obligacion.ts`: `borrarObligacion(id)`, `operacion: 'obligaciones.borrar'`. Borrado lógico con rastro. (H2.4 decidirá qué pasa con sus ocurrencias pagadas.)
+  - [x] Pruebas con base real y `ahora`/`nuevoId` fijos, como en `configurar-pagos.test.ts`:
     - Alta → fila con UUID y sin rastro.
     - Edición → mismo `id` y rastro `editar` completo.
     - Repetir los mismos datos → sin rastro nuevo.
@@ -186,16 +190,16 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
     - Anual con reserva mayor que el monto → `fallo`.
     - Editar una anual cuya fecha guardada envejeció más de 62 días, cambiando solo el monto → se acepta.
 
-- [ ] **T7. Cargador y hook de configuración (AC: 1–3, 10)**
-  - [ ] `src/data/queries/cargar-hechos.ts` lee `vehiculos` y `obligaciones` con `.where(vigentes(tabla))`, ordenadas por `(createdAt, id)`.
+- [x] **T7. Cargador y hook de configuración (AC: 1–3, 10)**
+  - [x] `src/data/queries/cargar-hechos.ts` lee `vehiculos` y `obligaciones` con `.where(vigentes(tabla))`, ordenadas por `(createdAt, id)`.
     - Una mensual sin `monto` o sin `dia` se descarta. Una anual sin `monto`, `fechaVencimiento` o reserva completa también. Es defensa para que el tipo sea honesto (y para las futuras cuotas de H1.7): no lances.
     - Un `vehiculoId` que no está entre los Vehículos vigentes pasa a `null`.
     - Actualiza el JSDoc de "tablas que lee cada historia".
-  - [ ] Pruebas en `cargar-hechos.test.ts` con la base real: base vacía; filas de los dos tipos; borradas excluidas; fila incompleta descartada; `vehiculoId` huérfano → `null`.
-  - [ ] `src/hooks/use-configuracion.ts` agrega `vehiculos` y `obligaciones`, derivados de `useHechos()` (sin lectura propia). Actualiza su prueba.
+  - [x] Pruebas en `cargar-hechos.test.ts` con la base real: base vacía; filas de los dos tipos; borradas excluidas; fila incompleta descartada; `vehiculoId` huérfano → `null`.
+  - [x] `src/hooks/use-configuracion.ts` agrega `vehiculos` y `obligaciones`, derivados de `useHechos()` (sin lectura propia). Actualiza su prueba.
 
-- [ ] **T8. Textos (AC: 1, 9, 10, 11)**
-  - [ ] Con la Voz del socio (honesto, amable, sin jerga y sin culpa). Las funciones reciben cifras y fechas **ya formateadas**:
+- [x] **T8. Textos (AC: 1, 9, 10, 11)**
+  - [x] Con la Voz del socio (honesto, amable, sin jerga y sin culpa). Las funciones reciben cifras y fechas **ya formateadas**:
     - `navegacion.ts`: Vehículos, Nuevo vehículo, Editar vehículo, Obligaciones, Nueva obligación, Editar obligación.
     - `ajustes.ts`: entradas y resúmenes, p. ej. `resumenVehiculos(nombres: string[])` → "Moto azul, Carro" o "Sin vehículos", y `resumenObligaciones(mensuales, anuales)` → "3 mensuales · 2 anuales".
     - `configuracion.ts`, agregando sin romper lo de H1.4:
@@ -210,8 +214,8 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
       - Título "Obligaciones vencidas".
       - `obligacionVencida(nombre, monto, dia)` → "{nombre}: {monto}, venció el {dia}. Lo cuento como si lo pagaras hoy."
 
-- [ ] **T9. Componentes reutilizables (AC: 1–4)**
-  - [ ] En `src/components/configuracion/`, porque el asistente de H1.8 los reutiliza:
+- [x] **T9. Componentes reutilizables (AC: 1–4)**
+  - [x] En `src/components/configuracion/`, porque el asistente de H1.8 los reutiliza:
     - `opciones.tsx`: grupo de opciones de selección única (`accessibilityRole="radio"`, `accessibilityState={{ checked }}`), para el tipo y el Vehículo. Genérico en `T extends string | null`.
     - `boton-borrar.tsx`: borrado con **confirmación en línea en dos pasos** (primer toque → texto de confirmación con "Sí, borrar" y "Cancelar"). **Sin `Alert` ni `Modal`**: la capa de bloqueo no tapa ventanas nativas (diferido de H1.2).
     - `lista-vehiculos.tsx` (`{ onAgregar, onEditar(id) }`) y `lista-obligaciones.tsx` (igual). La segunda va agrupada en Mensuales y Anuales. Cada fila muestra un resumen ("Día 8 · 300.000" o "15 de mar. · 1.800.000 · Moto azul") y tiene estado vacío.
@@ -227,8 +231,8 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
       - **Mensual:** nombre, monto y día, con la ayuda del último día del mes de H1.4.
       - **Anual:** nombre, monto, fecha de vencimiento (`AAAA-MM-DD` en texto; no hay selector de fecha), Vehículo (`Opciones` con "Sin vehículo" y los vigentes; sin Vehículos registrados solo aparece "Sin vehículo") y reserva inicial con su fecha (por defecto `0` y `useHoy()`).
 
-- [ ] **T10. Rutas y navegación (AC: 1, 4, 10)**
-  - [ ] Rutas nuevas. Solo montan componentes:
+- [x] **T10. Rutas y navegación (AC: 1, 4, 10)**
+  - [x] Rutas nuevas. Solo montan componentes:
     ```text
     src/app/configuracion/vehiculos/index.tsx      # ListaVehiculos → push a [id]
     src/app/configuracion/vehiculos/[id].tsx       # id = 'nuevo' o el UUID → FormularioVehiculo; onGuardado/onBorrado → router.back()
@@ -238,13 +242,13 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
     - `useLocalSearchParams<{ id: string }>()` de `expo-router`. `'nuevo'` → `id = null`.
     - Navega con `router.push({ pathname: '/configuracion/vehiculos/[id]', params: { id } })` (rutas tipadas).
     - El título de `[id]` ("Nuevo…"/"Editar…") se fija desde la pantalla con `<Stack.Screen options={{ title }} />`, con texto de `textosNavegacion`.
-  - [ ] En `src/app/_layout.tsx` agrega los `Stack.Screen` de las rutas nuevas, con su `title`. **Cambia solo la lista de pantallas del Stack:** el gating de H1.2/H1.4 queda intacto (orden bloqueo → error → carga → contenido, la capa absoluta, `BackHandler` y `Keyboard.dismiss`). No uses `presentation: 'modal'`.
-  - [ ] `src/app/(tabs)/ajustes.tsx`: dos entradas nuevas, Vehículos y Obligaciones, debajo de las de H1.4, con su resumen (`useConfiguracion`, `formatearDinero`).
-  - [ ] `src/app/(tabs)/index.tsx`: bajo el bloque de Saldo calculado (y antes de los Pagos atrasados), un bloque "Obligaciones vencidas" que solo aparece si `estado.obligacionesVencidas.length > 0`. Una línea por vencida con `textosInicio.obligacionVencida(nombre, formatearDinero(monto), formatearFechaCorta(fecha, hoy))`. No calcula nada (AD-1).
-  - [ ] Si `tsc` no reconoce las rutas nuevas (`typedRoutes`), corre `npx expo start` una vez para regenerar `.expo/types` (lección de H1.4). No desactives `typedRoutes`.
+  - [x] En `src/app/_layout.tsx` agrega los `Stack.Screen` de las rutas nuevas, con su `title`. **Cambia solo la lista de pantallas del Stack:** el gating de H1.2/H1.4 queda intacto (orden bloqueo → error → carga → contenido, la capa absoluta, `BackHandler` y `Keyboard.dismiss`). No uses `presentation: 'modal'`.
+  - [x] `src/app/(tabs)/ajustes.tsx`: dos entradas nuevas, Vehículos y Obligaciones, debajo de las de H1.4, con su resumen (`useConfiguracion`, `formatearDinero`).
+  - [x] `src/app/(tabs)/index.tsx`: bajo el bloque de Saldo calculado (y antes de los Pagos atrasados), un bloque "Obligaciones vencidas" que solo aparece si `estado.obligacionesVencidas.length > 0`. Una línea por vencida con `textosInicio.obligacionVencida(nombre, formatearDinero(monto), formatearFechaCorta(fecha, hoy))`. No calcula nada (AD-1).
+  - [x] Si `tsc` no reconoce las rutas nuevas (`typedRoutes`), corre `npx expo start` una vez para regenerar `.expo/types` (lección de H1.4). No desactives `typedRoutes`.
 
-- [ ] **T11. Pruebas de pantallas e integración (AC: 9–11)**
-  - [ ] En `pruebas/pantallas/` (nunca en `src/app/`), con `await render(...)`:
+- [x] **T11. Pruebas de pantallas e integración (AC: 9–11)**
+  - [x] En `pruebas/pantallas/` (nunca en `src/app/`), con `await render(...)`:
     - `inicio.test.tsx`: con vencidas → título y líneas con nombre, monto y fecha; sin vencidas → sin título. Actualiza los Estados de prueba con los campos nuevos.
     - `ajustes.test.tsx`: las cuatro entradas, los resúmenes nuevos y la navegación.
     - `configuracion-vehiculos.test.tsx`: la lista (vacía y con datos), el alta, el error de nombre repetido, la edición precargada y el borrado en dos pasos.
@@ -258,16 +262,16 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
       - Edición con el tipo bloqueado, borrado y `noEncontrado`.
     - `layout.test.tsx`: siguen pasando las pruebas de gating sin cambiar sus aserciones.
     - Junto a los componentes: `opciones.test.tsx` y `boton-borrar.test.tsx`.
-  - [ ] Integración con base real en `src/hooks/use-estado.integracion.test.tsx` (mock de `@/data/db` y `@/services/reloj`):
+  - [x] Integración con base real en `src/hooks/use-estado.integracion.test.tsx` (mock de `@/data/db` y `@/services/reloj`):
     1. Configura los Pagos y el saldo.
     2. `ejecutar(guardarVehiculo(...))` y `ejecutar(guardarObligacion(...))` (una mensual vencida y una anual).
     3. `useEstado` muestra la vencida, la reserva anual y el Dinero libre esperado.
     4. Borrar la Obligación devuelve el Estado anterior.
 
-- [ ] **T12. Cierre**
-  - [ ] `npm run verificar` en verde. Hoy hay 561 pruebas; anota el nuevo total.
-  - [ ] `npx expo export --platform android` compila el bundle.
-  - [ ] Prueba manual en la build dev. No hay módulos nativos nuevos: si la build dev ya está instalada, basta con `npx expo start`. Recorrido:
+- [x] **T12. Cierre**
+  - [x] `npm run verificar` en verde. Hoy hay 561 pruebas; anota el nuevo total.
+  - [x] `npx expo export --platform android` compila el bundle.
+  - [x] Prueba manual en la build dev. No hay módulos nativos nuevos: si la build dev ya está instalada, basta con `npx expo start`. Recorrido:
     1. Registrar "Moto azul" y "Carro"; intentar "moto azul" repetido.
     2. Registrar arriendo mensual y servicios mensual.
     3. Registrar SOAT anual con la Moto azul y una reserva.
@@ -276,7 +280,7 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
     6. Editar y borrar una Obligación.
     7. Forzar una vencida (día anterior a hoy y posterior a la fecha del saldo) y verla en Inicio.
     8. Re-bloqueo tras más de 5 minutos sobre un formulario.
-  - [ ] Llena el Dev Agent Record: archivos, desvíos y el resultado de la migración.
+  - [x] Llena el Dev Agent Record: archivos, desvíos y el resultado de la migración.
 
 ## Dev Notes
 
@@ -472,14 +476,112 @@ pruebas/pantallas/configuracion-vehiculos.test.tsx, configuracion-obligaciones.t
 
 ### Agent Model Used
 
+Claude Opus 5.5 (`claude-opus-5-5`), con dev-story.
+
 ### Debug Log References
+
+- 2026-11-10: una corrida de regresión con la máquina cargada (load average 16) dio 3 fallos por tiempo agotado en pruebas de pantallas; aisladas y en la corrida completa siguiente pasan 745/745. No es un error de código.
+- `npm run verificar` en verde: typecheck, lint (`--max-warnings=0`) y **745 pruebas en 49 suites** (antes 561).
+- `npx expo export --platform android` compila el bundle Hermes (3,3 MB), con salida fuera del repo.
+- `npm run db:generar` → `drizzle/0002_lucky_lizard.sql`: crea `obligaciones` (12 columnas) y `vehiculos` (5 columnas), sin índices ni FK. `when` de la 0002 = 1794055913467 > 1793970482285 (0001). `0000` y `0001` intactas.
+- `.expo/types/router.d.ts` regenerado con `npx expo start` (el puerto 8081 estaba ocupado por otro servidor, pero los tipos se generaron igual): incluye `/configuracion/vehiculos/[id]` y `/configuracion/obligaciones/[id]`.
+- Pruebas de mutación del algoritmo de la reserva: sin el guardia de "reserva antes de liberar en hoy" fallan 4 pruebas; invirtiendo el orden crédito/liberación falla 1.
 
 ### Completion Notes List
 
 - Análisis de contexto completado: guía de desarrollo exhaustiva creada (create-story, 2026-11-06).
+- **Implementado (T1–T11 y T12 salvo la prueba manual):**
+  - `domain/`: `ocurrenciasAnuales`; validación de Vehículos y Obligaciones (`normalizarNombre`, `mismoNombre`, `erroresX`/`validarX`); `Hechos` con `vehiculos` y `obligaciones`; `Estado` con `obligacionesPendientes`, `obligacionesVencidas`, `reservas`, `reservasAnuales` y `aportesProgramados`; `domain/obligaciones.ts` con las ocurrencias mensuales pendientes, el algoritmo de la reserva anual (eventos crédito → reinicio → liberación) y la composición. `calcularEstado` solo compone y acumula en un mapa por fecha.
+  - `data/`: tablas `vehiculos` y `obligaciones` (sin FK), migración 0002, módulos dueños, cuatro comandos (`vehiculos.guardar`, `vehiculos.borrar`, `obligaciones.guardar`, `obligaciones.borrar`) y el cargador (filas incompletas descartadas, `vehiculoId` huérfano → `null`).
+  - UI: `Opciones`, `BotonBorrar` (confirmación en línea, sin `Alert`/`Modal`), listas y formularios reutilizables, cuatro rutas, dos entradas en Ajustes y el bloque de vencidas en Inicio.
+  - Pruebas: casos A–H de `calcularEstado` con los números de la historia, reglas por separado en `obligaciones.test.ts`, tablas y comandos con base real, cargador, pantallas, componentes y la integración de punta a punta (el borrado de las dos Obligaciones devuelve exactamente el Estado anterior).
+- **Prueba manual (T12): hecha por Priettos el 2026-11-10** en la build dev. Recorrido completo OK (los 8 pasos de T12).
+- **Desvíos y decisiones:**
+  1. **Algoritmo de la reserva, caso `fs < o ≤ f0`** (reserva anotada después de una ocurrencia vencida sin pagar). La regla de T4 la hace pendiente; la del algoritmo no la miraba (solo `o > f0`). Se generan los cierres desde `max(ancla, min(f0, fs) + 1)`: con `o ≤ fs` es asumida pagada (y entonces `o > f0`); con `o > fs` es pendiente y libera la reserva. Así se cumplen las dos reglas. Probado en `obligaciones.test.ts`.
+  2. `Formulario` recibe una prop opcional `pie` (debajo de Guardar) para el botón de borrar. Compatible con H1.4.
+  3. Archivos nuevos no listados: `components/configuracion/fila.tsx` (fila tocable común a las dos listas) y `no-encontrado.tsx` (común a los dos formularios).
+  4. Textos: el `errores.fechaAntigua` de H1.4 habla del saldo, así que la fecha de vencimiento y la de la reserva tienen su propio mensaje (`erroresVencimiento`, `erroresFechaReserva`). También `falloAlBorrar` y `borrando`. La etiqueta del tipo es "Cada cuánto se paga".
+  5. `LEJANIA_MAXIMA_VENCIMIENTO_DIAS = 366` exportada en `entrada.ts`, junto a `ANTIGUEDAD_MAXIMA_SALDO_DIAS`.
+  6. En la lista, la fecha de una anual va sin año ("15 de mar."), como en el ejemplo de la historia: se repite cada año. En Inicio, la fecha de una vencida sí lleva el año si es de otro año.
+  7. `resumenObligaciones` omite el tipo sin ninguna ("2 anuales") y dice "Sin obligaciones" si no hay.
+  8. La prueba de Ajustes de H1.4 contaba 2 botones; ahora son 4 (Vehículos y Obligaciones).
+  9. No hay prueba de doble toque a nivel de pantalla: con `await fireEvent.press` el tick corre entre toques. El candado ya lo prueba `use-guardado-diferido.test.ts` en el mismo frame.
+  10. Las líneas de vencidas en Inicio van en color de peligro y con texto explícito (NFR6).
+  11. Formato: no hay Prettier en el proyecto; se usó el de la caché de npx (3.9.10) con `--single-quote --print-width 120` sobre los archivos nuevos. En los archivos de H1.4 solo se formatearon las líneas nuevas.
 
 ### File List
+
+**Nuevos**
+- `drizzle/0002_lucky_lizard.sql`
+- `drizzle/meta/0002_snapshot.json`
+- `src/domain/obligaciones.ts`
+- `src/domain/obligaciones.test.ts`
+- `src/data/tablas/vehiculos.ts`
+- `src/data/tablas/vehiculos.test.ts`
+- `src/data/tablas/obligaciones.ts`
+- `src/data/tablas/obligaciones.test.ts`
+- `src/data/commands/guardar-vehiculo.ts`
+- `src/data/commands/guardar-vehiculo.test.ts`
+- `src/data/commands/borrar-vehiculo.ts`
+- `src/data/commands/borrar-vehiculo.test.ts`
+- `src/data/commands/guardar-obligacion.ts`
+- `src/data/commands/guardar-obligacion.test.ts`
+- `src/data/commands/borrar-obligacion.ts`
+- `src/data/commands/borrar-obligacion.test.ts`
+- `src/components/configuracion/opciones.tsx`
+- `src/components/configuracion/opciones.test.tsx`
+- `src/components/configuracion/boton-borrar.tsx`
+- `src/components/configuracion/boton-borrar.test.tsx`
+- `src/components/configuracion/fila.tsx`
+- `src/components/configuracion/no-encontrado.tsx`
+- `src/components/configuracion/lista-vehiculos.tsx`
+- `src/components/configuracion/lista-obligaciones.tsx`
+- `src/components/configuracion/formulario-vehiculo.tsx`
+- `src/components/configuracion/formulario-obligacion.tsx`
+- `src/app/configuracion/vehiculos/index.tsx`
+- `src/app/configuracion/vehiculos/[id].tsx`
+- `src/app/configuracion/obligaciones/index.tsx`
+- `src/app/configuracion/obligaciones/[id].tsx`
+- `pruebas/pantallas/configuracion-vehiculos.test.tsx`
+- `pruebas/pantallas/configuracion-obligaciones.test.tsx`
+
+**Modificados**
+- `drizzle/meta/_journal.json`
+- `drizzle/migrations.js`
+- `src/domain/ocurrencias.ts`
+- `src/domain/ocurrencias.test.ts`
+- `src/domain/entrada.ts`
+- `src/domain/entrada.test.ts`
+- `src/domain/hechos.ts`
+- `src/domain/estado.ts`
+- `src/domain/calcular-estado.ts`
+- `src/domain/calcular-estado.test.ts`
+- `src/data/schema.ts`
+- `src/data/queries/cargar-hechos.ts`
+- `src/data/queries/cargar-hechos.test.ts`
+- `src/data/use-hechos.test.tsx`
+- `src/hooks/use-configuracion.ts`
+- `src/hooks/use-configuracion.test.ts`
+- `src/hooks/use-comando.test.ts`
+- `src/hooks/use-estado.test.ts`
+- `src/hooks/use-estado.integracion.test.tsx`
+- `src/textos/navegacion.ts`
+- `src/textos/ajustes.ts`
+- `src/textos/configuracion.ts`
+- `src/textos/inicio.ts`
+- `src/components/configuracion/formulario.tsx`
+- `src/app/_layout.tsx`
+- `src/app/(tabs)/ajustes.tsx`
+- `src/app/(tabs)/index.tsx`
+- `pruebas/pantallas/inicio.test.tsx`
+- `pruebas/pantallas/ajustes.test.tsx`
+- `pruebas/pantallas/configuracion-pagos.test.tsx`
+- `pruebas/pantallas/configuracion-saldo.test.tsx`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `_bmad-output/implementation-artifacts/1-5-registrar-vehiculos-y-obligaciones-mensuales-y-anuales.md`
 
 ## Change Log
 
 - 2026-11-06: Historia creada con create-story. Estado → ready-for-dev.
+- 2026-11-07: Implementación de T1–T11 y del cierre automatizable de T12 con dev-story (tablas `vehiculos`/`obligaciones`, migración 0002, cuatro comandos, ocurrencias anuales, Obligaciones pendientes y vencidas, reserva anual y Aportes programados en el Estado, listas y formularios, Ajustes e Inicio). `npm run verificar` en verde con 745 pruebas. Falta la prueba manual de T12 en la build dev.
+- 2026-11-10: Prueba manual de T12 completada por Priettos en la build dev; todo funciona. Regresión completa en verde (745 pruebas). Historia pasada a `review`.

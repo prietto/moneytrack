@@ -19,6 +19,8 @@ describe('useConfiguracion', () => {
       saldoInicial: null,
       colchon: null,
       colchonSugerido: 4_000_000,
+      vehiculos: [],
+      obligaciones: [],
     });
   });
 
@@ -30,6 +32,8 @@ describe('useConfiguracion', () => {
         { id: 'p1', numero: 1, dia: 10, montoEsperado: 2_000_000 },
         { id: 'p2', numero: 2, dia: 30, montoEsperado: 6_000_000 },
       ],
+      vehiculos: [{ id: 'v1', nombre: 'Moto azul' }],
+      obligaciones: [{ id: 'o1', tipo: 'mensual', nombre: 'Arriendo', monto: 1_500_000, dia: 1 }],
     };
     useHechosMock.mockReturnValue(hechos);
     const { result } = await renderHook(() => useConfiguracion());
@@ -39,6 +43,8 @@ describe('useConfiguracion', () => {
       saldoInicial: hechos.saldoInicial,
       colchon: 3_000_000,
       colchonSugerido: 3_000_000,
+      vehiculos: hechos.vehiculos,
+      obligaciones: hechos.obligaciones,
     });
   });
 

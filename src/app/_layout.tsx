@@ -85,6 +85,10 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="configuracion/pagos" options={{ title: textosNavegacion.pagos }} />
         <Stack.Screen name="configuracion/saldo-y-colchon" options={{ title: textosNavegacion.saldoYColchon }} />
+        <Stack.Screen name="configuracion/vehiculos/index" options={{ title: textosNavegacion.vehiculos }} />
+        <Stack.Screen name="configuracion/vehiculos/[id]" options={{ title: textosNavegacion.vehiculos }} />
+        <Stack.Screen name="configuracion/obligaciones/index" options={{ title: textosNavegacion.obligaciones }} />
+        <Stack.Screen name="configuracion/obligaciones/[id]" options={{ title: textosNavegacion.obligaciones }} />
       </Stack>
     );
   }
