@@ -1,6 +1,14 @@
 import { SIEMBRA } from '@/data/siembra';
 import { useHechos } from '@/data/use-hechos';
-import type { ObligacionDefinida, PagoDefinido, SaldoInicial, Vehiculo } from '@/domain/hechos';
+import type {
+  Categoria,
+  FondoProtegido,
+  ObligacionDefinida,
+  PagoDefinido,
+  PresupuestoEsencial,
+  SaldoInicial,
+  Vehiculo,
+} from '@/domain/hechos';
 
 export type Configuracion = {
   pago1: PagoDefinido | null;
@@ -13,6 +21,12 @@ export type Configuracion = {
   vehiculos: Vehiculo[];
   /** Vigentes, en orden de creación. */
   obligaciones: ObligacionDefinida[];
+  /** Vigentes, en orden de creación. */
+  presupuestos: PresupuestoEsencial[];
+  /** Vigentes, en orden de creación. */
+  fondos: FondoProtegido[];
+  /** Vigentes, en orden de creación (incluidas las de sistema). */
+  categorias: Categoria[];
 };
 
 /**
@@ -20,7 +34,7 @@ export type Configuracion = {
  * `useHechos()`: no hace una lectura propia.
  */
 export function useConfiguracion(): Configuracion {
-  const { pagos, saldoInicial, colchon, vehiculos, obligaciones } = useHechos();
+  const { pagos, saldoInicial, colchon, vehiculos, obligaciones, presupuestos, fondos, categorias } = useHechos();
   return {
     pago1: pagos.find((p) => p.numero === 1) ?? null,
     pago2: pagos.find((p) => p.numero === 2) ?? null,
@@ -29,5 +43,8 @@ export function useConfiguracion(): Configuracion {
     colchonSugerido: colchon ?? SIEMBRA.colchon,
     vehiculos,
     obligaciones,
+    presupuestos,
+    fondos,
+    categorias,
   };
 }

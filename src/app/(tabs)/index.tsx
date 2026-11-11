@@ -38,8 +38,7 @@ function EstadoVacio({ faltan }: { faltan: Extract<Estado, { tipo: 'sinConfigura
 
 /**
  * Pantalla principal (FR13, UX-DR3). No calcula nada (AD-1): solo elige qué
- * mostrar del Estado. Meta y fondo llegan en H1.6–H1.7 y la Épica 3, debajo
- * de lo que hay.
+ * mostrar del Estado. La Meta llega en H1.7 y la Épica 3, debajo de lo que hay.
  */
 export default function Inicio() {
   const estado = useEstado();
@@ -72,6 +71,12 @@ export default function Inicio() {
       <View style={estilos.bloque}>
         <Text style={estilos.etiqueta}>{t.saldoCalculado}</Text>
         <Text style={estilos.saldo}>{formatearDinero(estado.saldoCalculado)}</Text>
+        {/* Sin Fondos configurados no se muestra nada. */}
+        {estado.fondos.map((f) => (
+          <Text key={f.fondoId} style={estilos.texto}>
+            {t.saldoFondo(f.nombre, formatearDinero(f.saldo))}
+          </Text>
+        ))}
       </View>
 
       {/* Sin vencidas no se muestra nada, ni el título. */}

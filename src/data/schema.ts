@@ -1,6 +1,9 @@
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
+// Relativo y no `@/`: drizzle-kit carga este archivo sin los alias de tsconfig.
+import { CLASES_GASTO } from '../domain/hechos';
+
 /**
  * Columnas comunes de toda tabla (AD-10): id UUID v4 en texto generado en el
  * cliente y marcas técnicas en ISO 8601 UTC. En SQL van en snake_case y en TS
@@ -95,4 +98,45 @@ export const obligaciones = sqliteTable('obligaciones', {
   vehiculoId: text('vehiculo_id'), // anual, opcional
   reservaInicialMonto: integer('reserva_inicial_monto'), // anual
   reservaInicialFecha: text('reserva_inicial_fecha'), // anual, 'YYYY-MM-DD'
+});
+
+/**
+ * Presupuestos esenciales (FR3, AD-9): N bolsas mensuales para esenciales
+ * variables. La siembra (migración 0004) crea "Comida" y "Mantenimiento de
+ * vehículos" sin monto. Nada derivado (AD-2): lo pendiente lo calcula domain/.
+ */
+export const presupuestos = sqliteTable('presupuestos', {
+  ...columnasComunes,
+  nombre: text('nombre').notNull(),
+  montoMensual: integer('monto_mensual'), // null: sin configurar
+});
+
+/**
+ * Fondos protegidos (FR4, AD-9): N bolsas para una pasión. El saldo no se
+ * guarda: se calcula desde el saldo inicial con fecha (AD-2) y el aporte
+ * mensual acreditado en el Pago 2 (AD-20). La siembra crea "Fondo enduro"
+ * sin configurar (aporte y saldo en null).
+ */
+export const fondos = sqliteTable('fondos', {
+  ...columnasComunes,
+  nombre: text('nombre').notNull(),
+  aporteMensual: integer('aporte_mensual'), // null: sin configurar
+  saldoInicialMonto: integer('saldo_inicial_monto'),
+  saldoInicialFecha: text('saldo_inicial_fecha'), // 'YYYY-MM-DD'
+});
+
+/**
+ * Categorías (FR8, AD-9): reglas por defecto que se copian al Gasto (AD-19).
+ * Enlaces por `id` (nunca por nombre), coherentes con la clase y sin
+ * `.references()` (como `obligaciones`). Las de sistema ("Pago de
+ * Obligación", "Sin registrar") no se editan ni se borran.
+ */
+export const categorias = sqliteTable('categorias', {
+  ...columnasComunes,
+  nombre: text('nombre').notNull(),
+  claseDefault: text('clase_default', { enum: CLASES_GASTO }).notNull(),
+  presupuestoId: text('presupuesto_id'), // solo Esencial, opcional
+  fondoId: text('fondo_id'), // solo Fondo protegido, obligatorio
+  requiereVehiculo: integer('requiere_vehiculo', { mode: 'boolean' }).notNull().default(false),
+  esSistema: integer('es_sistema', { mode: 'boolean' }).notNull().default(false),
 });

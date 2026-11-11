@@ -1,8 +1,12 @@
-import type { Estado, Faltante, OcurrenciaPago, SaldoDelDia } from './estado';
+import { compararAportes } from './aportes';
+import { compararTexto } from './comparar';
+import type { Estado, Faltante, OcurrenciaPago, SaldoDelDia, SaldoFondo } from './estado';
 import { sumarDias } from './fechas';
+import { resultadoFondo } from './fondos';
 import type { Hechos, PagoDefinido } from './hechos';
 import { obligacionesEnHorizonte } from './obligaciones';
 import { ocurrenciasMensuales } from './ocurrencias';
+import { presupuestosPendientes as calcularPresupuestosPendientes } from './presupuestos';
 
 /** El Horizonte va de `hoy` a `hoy + HORIZONTE_DIAS`, ambos inclusive (AD-5). */
 export const HORIZONTE_DIAS = 31;
@@ -49,10 +53,6 @@ function ocurrenciasDePagos(pagos: PagoDefinido[], desdeExclusivo: string, hoy: 
   );
 }
 
-function compararTexto(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
 /**
  * El cálculo único (AD-1, AD-18): de los Hechos y `hoy` salen todas las
  * cifras. Puro y total: no lee el reloj ni la base, no muta `hechos` y no
@@ -68,22 +68,34 @@ export function calcularEstado(hechos: Hechos, hoy: string): Estado {
 
   const pagosEsperados = ocurrenciasDePagos(hechos.pagos, saldoInicial.fecha, hoy);
 
-  // `faltantes` garantiza el Pago 2: en su fecha se acreditan los prorrateos (AD-20).
+  // `faltantes` garantiza el Pago 2: en su fecha se acreditan los prorrateos
+  // y los aportes a los Fondos (AD-20).
   const diaPago2 = hechos.pagos.find((p) => p.numero === 2)?.dia ?? 0;
-  const obligaciones = obligacionesEnHorizonte(hechos.obligaciones, diaPago2, {
-    fs: saldoInicial.fecha,
-    hoy,
-    hasta: sumarDias(hoy, HORIZONTE_DIAS),
-  });
+  const marco = { fs: saldoInicial.fecha, hoy, hasta: sumarDias(hoy, HORIZONTE_DIAS) };
+  const obligaciones = obligacionesEnHorizonte(hechos.obligaciones, diaPago2, marco);
+  const presupuestosPendientes = calcularPresupuestosPendientes(hechos.presupuestos, marco);
+
+  const fondos: SaldoFondo[] = [];
+  const aportesProgramados = [...obligaciones.aportes];
+  for (const f of hechos.fondos) {
+    const resultado = resultadoFondo(f, diaPago2, marco);
+    if (resultado === null) continue;
+    fondos.push({ fondoId: f.id, nombre: f.nombre, saldo: resultado.saldo });
+    aportesProgramados.push(...resultado.aportes);
+  }
+  aportesProgramados.sort(compararAportes);
+
   const reservaAnual = obligaciones.reservasAnuales.reduce((suma, r) => suma + r.reserva, 0);
-  const reservas = { anual: reservaAnual, total: reservaAnual };
+  const reservaFondo = fondos.reduce((suma, f) => suma + f.saldo, 0);
+  const reservas = { anual: reservaAnual, fondo: reservaFondo, total: reservaAnual + reservaFondo };
 
   // Flujo esperado por fecha proyectada; luego un solo recorrido acumulando.
   const flujoPorDia = new Map<string, number>();
   const sumar = (fecha: string, monto: number) => flujoPorDia.set(fecha, (flujoPorDia.get(fecha) ?? 0) + monto);
   for (const p of pagosEsperados) sumar(p.fechaProyectada, p.monto);
   for (const o of obligaciones.pendientes) sumar(o.fechaProyectada, o.reservaLiberada - o.monto);
-  for (const a of obligaciones.aportes) sumar(a.fecha, -a.monto);
+  for (const p of presupuestosPendientes) sumar(p.fecha, -p.monto);
+  for (const a of aportesProgramados) sumar(a.fecha, -a.monto);
 
   const saldoProyectado: SaldoDelDia[] = [];
   // Las Reservas actuales no están disponibles desde el primer día.
@@ -111,8 +123,10 @@ export function calcularEstado(hechos: Hechos, hoy: string): Estado {
     pagosAtrasados: pagosEsperados.filter((p) => p.pagoAtrasado),
     obligacionesPendientes: obligaciones.pendientes,
     obligacionesVencidas: obligaciones.pendientes.filter((o) => o.vencida),
+    presupuestosPendientes,
+    fondos,
     reservas,
     reservasAnuales: obligaciones.reservasAnuales,
-    aportesProgramados: obligaciones.aportes,
+    aportesProgramados,
   };
 }

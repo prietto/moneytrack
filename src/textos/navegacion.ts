@@ -11,4 +11,8 @@ export const textosNavegacion = {
   obligaciones: 'Obligaciones',
   nuevaObligacion: 'Nueva obligación',
   editarObligacion: 'Editar obligación',
+  presupuestosYFondo: 'Presupuestos y fondo',
+  categorias: 'Categorías',
+  nuevaCategoria: 'Nueva categoría',
+  editarCategoria: 'Editar categoría',
 } as const;

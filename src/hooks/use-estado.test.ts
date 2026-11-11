@@ -23,6 +23,9 @@ const configurados: Hechos = {
   ],
   vehiculos: [],
   obligaciones: [],
+  presupuestos: [],
+  fondos: [],
+  categorias: [],
 };
 
 beforeEach(() => {

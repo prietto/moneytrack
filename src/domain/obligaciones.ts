@@ -1,3 +1,5 @@
+import { compararAportes } from './aportes';
+import { compararTexto } from './comparar';
 import type { AporteProgramado, OcurrenciaObligacion } from './estado';
 import { esFechaValida, sumarDias } from './fechas';
 import type { ObligacionAnual, ObligacionDefinida, ObligacionMensual } from './hechos';
@@ -13,10 +15,6 @@ import { dividirHaciaArriba } from './redondeo';
  * - `hoy` y `hasta` (= hoy + 31, el fin del Horizonte).
  */
 export type Marco = { fs: string; hoy: string; hasta: string };
-
-function compararTexto(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
 
 function maxFecha(a: string, b: string): string {
   return a > b ? a : b;
@@ -190,6 +188,6 @@ export function obligacionesEnHorizonte(
     }
   }
   pendientes.sort(compararOcurrencias);
-  aportes.sort((a, b) => compararTexto(a.fecha, b.fecha) || compararTexto(a.obligacionId, b.obligacionId));
+  aportes.sort(compararAportes);
   return { pendientes, reservasAnuales, aportes };
 }

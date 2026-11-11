@@ -1,7 +1,16 @@
 import { calcularEstado, HORIZONTE_DIAS } from './calcular-estado';
 import type { Estado } from './estado';
 import { sumarDias } from './fechas';
-import { type Hechos, hechosVacios, type ObligacionAnual, type ObligacionMensual, type PagoDefinido } from './hechos';
+import {
+  type Categoria,
+  type FondoProtegido,
+  type Hechos,
+  hechosVacios,
+  type ObligacionAnual,
+  type ObligacionMensual,
+  type PagoDefinido,
+  type PresupuestoEsencial,
+} from './hechos';
 
 const HOY = '2026-11-03';
 
@@ -168,9 +177,11 @@ describe('calcularEstado', () => {
       // Sin Obligaciones: sin Reservas ni listas, y las mismas cifras de H1.4.
       expect(estado.obligacionesPendientes).toEqual([]);
       expect(estado.obligacionesVencidas).toEqual([]);
-      expect(estado.reservas).toEqual({ anual: 0, total: 0 });
+      expect(estado.reservas).toEqual({ anual: 0, fondo: 0, total: 0 });
       expect(estado.reservasAnuales).toEqual([]);
       expect(estado.aportesProgramados).toEqual([]);
+      expect(estado.presupuestosPendientes).toEqual([]);
+      expect(estado.fondos).toEqual([]);
     });
 
     it('una ocurrencia en hoy no está atrasada', () => {
@@ -286,7 +297,7 @@ describe('calcularEstado', () => {
 
     it('A. addendum recortado: Reservas, Aportes, saldo proyectado, mínimo y Dinero libre', () => {
       const estado = calculado(calcularEstado(casoA, HOY));
-      expect(estado.reservas).toEqual({ anual: 400_000, total: 400_000 });
+      expect(estado.reservas).toEqual({ anual: 400_000, fondo: 0, total: 400_000 });
       expect(estado.reservasAnuales).toEqual([{ obligacionId: 'soat', reserva: 400_000 }]);
       expect(estado.aportesProgramados).toEqual([
         { fecha: '2026-11-30', tipo: 'prorrateoAnual', obligacionId: 'soat', monto: 150_000 },
@@ -345,7 +356,7 @@ describe('calcularEstado', () => {
         ],
       };
       const estado = calculado(calcularEstado(hechos, HOY));
-      expect(estado.reservas).toEqual({ anual: 1_000_000, total: 1_000_000 });
+      expect(estado.reservas).toEqual({ anual: 1_000_000, fondo: 0, total: 1_000_000 });
       expect(estado.aportesProgramados).toEqual([
         { fecha: '2026-11-30', tipo: 'prorrateoAnual', obligacionId: 'tecno', monto: 100_000 },
       ]);
@@ -539,6 +550,128 @@ describe('calcularEstado', () => {
     });
   });
 
+  describe('Presupuestos esenciales y Fondos protegidos', () => {
+    function presupuesto(id: string, nombre: string, montoMensual: number | null): PresupuestoEsencial {
+      return { id, nombre, montoMensual };
+    }
+
+    function fondo(aporteMensual: number | null, saldo: { monto: number; fecha: string } | null): FondoProtegido {
+      return { id: 'enduro', nombre: 'Fondo enduro', aporteMensual, saldoInicial: saldo };
+    }
+
+    const categorias: Categoria[] = [
+      {
+        id: 'combustible',
+        nombre: 'Combustible',
+        claseDefault: 'esencial',
+        presupuestoId: 'mant',
+        fondoId: null,
+        requiereVehiculo: true,
+        esSistema: false,
+      },
+      {
+        id: 'equipo',
+        nombre: 'Equipo de enduro',
+        claseDefault: 'fondo',
+        presupuestoId: null,
+        fondoId: 'enduro',
+        requiereVehiculo: false,
+        esSistema: false,
+      },
+    ];
+
+    const casoA: Hechos = {
+      ...casoBase,
+      obligaciones: [
+        mensual('servicios', 'Servicios', 8, 300_000),
+        mensual('arriendo', 'Arriendo', 1, 1_500_000),
+        anual('soat', 'SOAT', 1_800_000, '2027-03-15', 400_000, '2026-11-03'),
+      ],
+    };
+
+    /** Caso A6: el addendum recortado a H1.6 (caso A de H1.5 + Presupuestos y fondo). */
+    const casoA6: Hechos = {
+      ...casoA,
+      presupuestos: [
+        presupuesto('comida', 'Comida', 700_000),
+        presupuesto('mant', 'Mantenimiento de vehículos', 400_000),
+      ],
+      fondos: [fondo(350_000, { monto: 350_000, fecha: '2026-11-03' })],
+      categorias,
+    };
+
+    it('A6. addendum recortado: Reservas, fondo, Aportes, saldo proyectado, mínimo y Dinero libre', () => {
+      const estado = calculado(calcularEstado(casoA6, HOY));
+      expect(estado.reservas).toEqual({ anual: 400_000, fondo: 350_000, total: 750_000 });
+      expect(estado.fondos).toEqual([{ fondoId: 'enduro', nombre: 'Fondo enduro', saldo: 350_000 }]);
+      expect(estado.aportesProgramados).toEqual([
+        { fecha: '2026-11-30', tipo: 'fondo', fondoId: 'enduro', monto: 350_000 },
+        { fecha: '2026-11-30', tipo: 'prorrateoAnual', obligacionId: 'soat', monto: 150_000 },
+      ]);
+      expect(estado.presupuestosPendientes).toEqual([
+        { presupuestoId: 'comida', mes: '2026-11', fecha: '2026-11-03', monto: 700_000 },
+        { presupuestoId: 'mant', mes: '2026-11', fecha: '2026-11-03', monto: 400_000 },
+        { presupuestoId: 'comida', mes: '2026-12', fecha: '2026-12-01', monto: 700_000 },
+        { presupuestoId: 'mant', mes: '2026-12', fecha: '2026-12-01', monto: 400_000 },
+      ]);
+      for (const d of estado.saldoProyectado) {
+        const esperado =
+          d.fecha < '2026-11-08'
+            ? 8_150_000
+            : d.fecha < '2026-11-10'
+              ? 7_850_000
+              : d.fecha < '2026-11-30'
+                ? 9_850_000
+                : d.fecha < '2026-12-01'
+                  ? 15_350_000
+                  : 12_750_000;
+        expect(d).toEqual({ fecha: d.fecha, saldo: esperado });
+      }
+      expect(estado.minimo).toEqual({ fecha: '2026-11-08', saldo: 7_850_000 });
+      expect(estado.dineroLibre).toBe(3_850_000);
+    });
+
+    it('sin montos ni fondo configurado: las mismas cifras de H1.5', () => {
+      const sembrado: Hechos = {
+        ...casoA,
+        presupuestos: [presupuesto('comida', 'Comida', null), presupuesto('mant', 'Mantenimiento de vehículos', null)],
+        fondos: [fondo(null, null)],
+        categorias,
+      };
+      const estado = calculado(calcularEstado(sembrado, HOY));
+      expect(estado).toEqual(calcularEstado(casoA, HOY));
+      expect(estado.dineroLibre).toBe(5_300_000);
+      expect(estado.fondos).toEqual([]);
+      expect(estado.reservas).toEqual({ anual: 400_000, fondo: 0, total: 400_000 });
+    });
+
+    it('un fondo con saldo y aporte 0 aparece y reserva su saldo, sin Aportes', () => {
+      const hechos: Hechos = { ...casoBase, fondos: [fondo(0, { monto: 100_000, fecha: '2026-11-03' })] };
+      const estado = calculado(calcularEstado(hechos, HOY));
+      expect(estado.fondos).toEqual([{ fondoId: 'enduro', nombre: 'Fondo enduro', saldo: 100_000 }]);
+      expect(estado.aportesProgramados).toEqual([]);
+      expect(estado.saldoProyectado[0].saldo).toBe(9_900_000);
+    });
+
+    it('las categorías no cambian ninguna cifra', () => {
+      expect(calcularEstado({ ...casoA6, categorias: [] }, HOY)).toEqual(calcularEstado(casoA6, HOY));
+    });
+
+    it('todos los montos son enteros', () => {
+      const estado = calculado(calcularEstado(casoA6, HOY));
+      const montos = [
+        estado.dineroLibre,
+        estado.reservas.total,
+        estado.reservas.fondo,
+        ...estado.saldoProyectado.map((d) => d.saldo),
+        ...estado.presupuestosPendientes.map((p) => p.monto),
+        ...estado.fondos.map((f) => f.saldo),
+        ...estado.aportesProgramados.map((a) => a.monto),
+      ];
+      expect(montos.every(Number.isInteger)).toBe(true);
+    });
+  });
+
   it('es pura: mismo resultado con los mismos datos y no muta los hechos', () => {
     const congelar = <T extends object>(o: T): T => Object.freeze(o);
     const hechos: Hechos = congelar({
@@ -552,6 +685,26 @@ describe('calcularEstado', () => {
           ...anual('soat', 'SOAT', 1_800_000, '2026-12-01', 400_000, '2026-11-01'),
           vehiculoId: 'v1',
           reservaInicial: congelar({ monto: 400_000, fecha: '2026-11-01' }),
+        }),
+      ]),
+      presupuestos: congelar([congelar({ id: 'comida', nombre: 'Comida', montoMensual: 700_000 })]),
+      fondos: congelar([
+        congelar({
+          id: 'enduro',
+          nombre: 'Fondo enduro',
+          aporteMensual: 350_000,
+          saldoInicial: congelar({ monto: 100_000, fecha: '2026-10-01' }),
+        }),
+      ]),
+      categorias: congelar([
+        congelar({
+          id: 'salud',
+          nombre: 'Salud',
+          claseDefault: 'esencial' as const,
+          presupuestoId: null,
+          fondoId: null,
+          requiereVehiculo: false,
+          esSistema: false,
         }),
       ]),
     });

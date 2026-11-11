@@ -43,6 +43,9 @@ const configuracion: Configuracion = {
       reservaInicial: { monto: 400_000, fecha: '2026-11-03' },
     },
   ],
+  presupuestos: [],
+  fondos: [],
+  categorias: [],
 };
 
 beforeEach(() => {

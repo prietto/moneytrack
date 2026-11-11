@@ -19,6 +19,9 @@ const vacia: Configuracion = {
   colchonSugerido: 4_000_000,
   vehiculos: [],
   obligaciones: [],
+  presupuestos: [],
+  fondos: [],
+  categorias: [],
 };
 
 beforeEach(() => {
@@ -30,9 +33,10 @@ describe('Ajustes', () => {
     useConfiguracionMock.mockReturnValue(vacia);
     await render(<Ajustes />);
 
-    // H1.5 agrega Vehículos y Obligaciones, con sus propios resúmenes vacíos.
-    expect(screen.getAllByRole('button')).toHaveLength(4);
-    expect(screen.getAllByText(textosAjustes.sinConfigurar)).toHaveLength(2);
+    // H1.5 agrega Vehículos y Obligaciones y H1.6 Presupuestos y fondo y Categorías.
+    expect(screen.getAllByRole('button')).toHaveLength(6);
+    // Pagos, saldo y Presupuestos y fondo.
+    expect(screen.getAllByText(textosAjustes.sinConfigurar)).toHaveLength(3);
 
     await fireEvent.press(screen.getByRole('button', { name: textosAjustes.pagos }));
     expect(router.push).toHaveBeenCalledWith('/configuracion/pagos');
@@ -57,7 +61,8 @@ describe('Ajustes', () => {
       ),
     ).toBeTruthy();
     expect(screen.getByText(textosAjustes.resumenSaldoYColchon('10.000.000', '3 de nov.', '4.000.000'))).toBeTruthy();
-    expect(screen.queryByText(textosAjustes.sinConfigurar)).toBeNull();
+    // Solo queda sin configurar Presupuestos y fondo.
+    expect(screen.getAllByText(textosAjustes.sinConfigurar)).toHaveLength(1);
   });
 
   it('un saldo de otro año muestra el año en el resumen', async () => {
@@ -78,10 +83,10 @@ describe('Ajustes', () => {
 });
 
 describe('Ajustes: Vehículos y Obligaciones', () => {
-  it('muestra las cuatro entradas, con los resúmenes vacíos', async () => {
+  it('muestra las seis entradas, con los resúmenes vacíos', async () => {
     useConfiguracionMock.mockReturnValue(vacia);
     await render(<Ajustes />);
-    expect(screen.getAllByRole('button')).toHaveLength(4);
+    expect(screen.getAllByRole('button')).toHaveLength(6);
     expect(screen.getByText(textosAjustes.resumenVehiculos([]))).toBeTruthy();
     expect(screen.getByText(textosAjustes.resumenObligaciones(0, 0))).toBeTruthy();
     expect(textosAjustes.resumenVehiculos([])).toBe('Sin vehículos');
@@ -127,5 +132,65 @@ describe('Ajustes: Vehículos y Obligaciones', () => {
   it('una sola Obligación de cada tipo usa el singular, y omite el tipo sin ninguna', () => {
     expect(textosAjustes.resumenObligaciones(1, 0)).toBe('1 mensual');
     expect(textosAjustes.resumenObligaciones(0, 2)).toBe('2 anuales');
+  });
+});
+
+describe('Ajustes: Presupuestos y fondo y Categorías', () => {
+  const categoria = (id: string, esSistema = false) => ({
+    id,
+    nombre: id,
+    claseDefault: 'gusto' as const,
+    presupuestoId: null,
+    fondoId: null,
+    requiereVehiculo: false,
+    esSistema,
+  });
+
+  it('resume los Presupuestos y el fondo configurados y cuenta las categorías', async () => {
+    useConfiguracionMock.mockReturnValue({
+      ...vacia,
+      presupuestos: [
+        { id: 'pr1', nombre: 'Comida', montoMensual: 700_000 },
+        { id: 'pr2', nombre: 'Mantenimiento de vehículos', montoMensual: 400_000 },
+        { id: 'pr3', nombre: 'Sin monto', montoMensual: null },
+      ],
+      fondos: [
+        {
+          id: 'f1',
+          nombre: 'Fondo enduro',
+          aporteMensual: 350_000,
+          saldoInicial: { monto: 0, fecha: '2026-11-06' },
+        },
+      ],
+      categorias: [categoria('a'), categoria('b'), categoria('c', true)],
+    });
+    await render(<Ajustes />);
+    expect(
+      screen.getByText('Comida 700.000 · Mantenimiento de vehículos 400.000 · Fondo enduro: 350.000 al mes'),
+    ).toBeTruthy();
+    expect(screen.getByText('3 categorías')).toBeTruthy();
+  });
+
+  it('sin montos dice "Sin configurar"; una sola categoría va en singular', async () => {
+    useConfiguracionMock.mockReturnValue({
+      ...vacia,
+      presupuestos: [{ id: 'pr1', nombre: 'Comida', montoMensual: null }],
+      fondos: [{ id: 'f1', nombre: 'Fondo enduro', aporteMensual: null, saldoInicial: null }],
+      categorias: [categoria('a')],
+    });
+    await render(<Ajustes />);
+    expect(screen.getByRole('button', { name: textosAjustes.presupuestosYFondo }).props.accessibilityHint).toBe(
+      textosAjustes.sinConfigurar,
+    );
+    expect(screen.getByText('1 categoría')).toBeTruthy();
+  });
+
+  it('navega a Presupuestos y fondo y a Categorías', async () => {
+    useConfiguracionMock.mockReturnValue(vacia);
+    await render(<Ajustes />);
+    await fireEvent.press(screen.getByRole('button', { name: textosAjustes.presupuestosYFondo }));
+    expect(router.push).toHaveBeenCalledWith('/configuracion/presupuestos-y-fondos');
+    await fireEvent.press(screen.getByRole('button', { name: textosAjustes.categorias }));
+    expect(router.push).toHaveBeenCalledWith('/configuracion/categorias');
   });
 });

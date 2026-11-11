@@ -24,11 +24,12 @@ function Entrada({ titulo, resumen, ruta }: { titulo: string; resumen: string; r
 }
 
 /**
- * Ajustes. Presupuestos, Deudas, umbral y exportar llegan en H1.6–H1.8 y H7:
- * sin entradas deshabilitadas mientras tanto.
+ * Ajustes. Deudas, umbral y exportar llegan en H1.7–H1.8 y H7: sin entradas
+ * deshabilitadas mientras tanto.
  */
 export default function Ajustes() {
-  const { pago1, pago2, saldoInicial, colchon, vehiculos, obligaciones } = useConfiguracion();
+  const { pago1, pago2, saldoInicial, colchon, vehiculos, obligaciones, presupuestos, fondos, categorias } =
+    useConfiguracion();
   const hoy = useHoy();
 
   const lineasPagos = [pago1, pago2]
@@ -53,12 +54,28 @@ export default function Ajustes() {
     obligaciones.filter((o) => o.tipo === 'anual').length,
   );
 
+  const resumenPresupuestos = textosAjustes.resumenPresupuestos([
+    ...presupuestos.flatMap((p) =>
+      p.montoMensual === null ? [] : [textosAjustes.lineaPresupuesto(p.nombre, formatearDinero(p.montoMensual))],
+    ),
+    ...fondos.flatMap((f) =>
+      f.aporteMensual === null ? [] : [textosAjustes.resumenFondo(f.nombre, formatearDinero(f.aporteMensual))],
+    ),
+  ]);
+  const resumenCategorias = textosAjustes.resumenCategorias(categorias.length);
+
   return (
     <ScrollView style={estilos.fondo} contentContainerStyle={estilos.contenido}>
       <Entrada titulo={textosAjustes.pagos} resumen={resumenPagos} ruta="/configuracion/pagos" />
       <Entrada titulo={textosAjustes.saldoYColchon} resumen={resumenSaldo} ruta="/configuracion/saldo-y-colchon" />
       <Entrada titulo={textosAjustes.vehiculos} resumen={resumenVehiculos} ruta="/configuracion/vehiculos" />
       <Entrada titulo={textosAjustes.obligaciones} resumen={resumenObligaciones} ruta="/configuracion/obligaciones" />
+      <Entrada
+        titulo={textosAjustes.presupuestosYFondo}
+        resumen={resumenPresupuestos}
+        ruta="/configuracion/presupuestos-y-fondos"
+      />
+      <Entrada titulo={textosAjustes.categorias} resumen={resumenCategorias} ruta="/configuracion/categorias" />
     </ScrollView>
   );
 }

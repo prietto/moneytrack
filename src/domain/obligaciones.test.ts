@@ -115,7 +115,7 @@ describe('obligacionesEnHorizonte', () => {
     );
     expect(r.pendientes.map((o) => o.obligacionId)).toEqual(['m', 'z']);
     expect(r.reservasAnuales.map((x) => x.obligacionId)).toEqual(['z', 'b']);
-    expect(r.aportes.map((a) => [a.fecha, a.obligacionId])).toEqual([
+    expect(r.aportes.map((a) => [a.fecha, a.tipo === 'prorrateoAnual' ? a.obligacionId : a.fondoId])).toEqual([
       ['2026-11-30', 'b'],
       ['2026-11-30', 'z'],
     ]);

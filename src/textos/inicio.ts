@@ -6,6 +6,7 @@ export const textosInicio = {
   dineroLibre: 'Dinero libre',
   explicacionDineroLibre: 'Lo que puedes gastar hoy sin tocar lo que ya tiene destino ni tu Colchón.',
   saldoCalculado: 'Saldo calculado',
+  saldoFondo: (nombre: string, monto: string) => `${nombre}: ${monto}`,
   faltante: (monto: string, dia: string) => `Ojo: el ${dia} te faltarían ${monto} para mantener tu Colchón.`,
   pagoAtrasado: (numero: number, dia: string) =>
     `Tu Pago ${numero} del ${dia} aún no está confirmado; lo cuento como si llegara hoy.`,

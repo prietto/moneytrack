@@ -27,6 +27,9 @@ const hechos: Hechos = {
   ],
   vehiculos: [],
   obligaciones: [],
+  presupuestos: [],
+  fondos: [],
+  categorias: [],
 };
 const comando = definirComando('prueba.x', () => 'valor');
 

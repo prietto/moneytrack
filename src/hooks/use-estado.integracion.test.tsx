@@ -3,7 +3,9 @@ import { act, renderHook } from '@testing-library/react-native';
 import { borrarObligacion } from '@/data/commands/borrar-obligacion';
 import { configurarPagos } from '@/data/commands/configurar-pagos';
 import { definirComando } from '@/data/commands/definir-comando';
+import { guardarCategoria } from '@/data/commands/guardar-categoria';
 import { guardarObligacion } from '@/data/commands/guardar-obligacion';
+import { guardarPresupuestosYFondos } from '@/data/commands/guardar-presupuestos-y-fondos';
 import { guardarSaldoInicialYColchon } from '@/data/commands/guardar-saldo-y-colchon';
 import { guardarVehiculo } from '@/data/commands/guardar-vehiculo';
 // Prueba de integración: sustituye data/db por la base en memoria (AD-3 aplica a la app, no a esta prueba).
@@ -13,6 +15,7 @@ import { obtenerDb } from '@/data/db';
 import { crearBaseDePrueba } from '@/data/pruebas/base-en-memoria';
 import { cargarHechos } from '@/data/queries/cargar-hechos';
 import { avisarCambio } from '@/data/cambios';
+import { IDS_SIEMBRA } from '@/data/siembra';
 import { hoy } from '@/services/reloj';
 
 import { ejecutar } from './use-comando';
@@ -170,7 +173,7 @@ describe('ejecutar → useEstado (integración)', () => {
       }),
     ]);
     // Reserva anual 600.000; el prorrateo de 100.000 se aparta el 30-nov.
-    expect(estado.reservas).toEqual({ anual: 600_000, total: 600_000 });
+    expect(estado.reservas).toEqual({ anual: 600_000, fondo: 0, total: 600_000 });
     expect(estado.aportesProgramados).toEqual([expect.objectContaining({ fecha: '2026-11-30', monto: 100_000 })]);
     // Hoy: 10M − 600.000 + 2M − 1,5M = 9,9M; es el mínimo. Dinero libre = 9,9M − 4M.
     expect(estado.minimo).toEqual({ fecha: '2026-11-12', saldo: 9_900_000 });
@@ -187,5 +190,70 @@ describe('ejecutar → useEstado (integración)', () => {
       expect(ejecutar(borrarObligacion(soatId)).ok).toBe(true);
     });
     expect(result.current).toEqual(anterior);
+  });
+
+  it('de punta a punta: Presupuestos y fondo → pendientes, reserva del fondo y Dinero libre; una categoría no cambia nada', async () => {
+    // hoy = 2026-11-05; saldo 10M al 5-nov; Colchón 4M; Pagos día 10 y 30.
+    const { result } = await renderHook(() => useEstado());
+    await act(async () => {
+      ejecutar(
+        configurarPagos({ pago1: { dia: 10, montoEsperado: 2_000_000 }, pago2: { dia: 30, montoEsperado: 6_000_000 } }),
+      );
+      ejecutar(
+        guardarSaldoInicialYColchon({ monto: 10_000_000, fecha: '2026-11-05', colchon: 4_000_000, hoy: '2026-11-05' }),
+      );
+    });
+    // La siembra no tiene montos: Dinero libre = 10M − 4M.
+    expect(result.current).toMatchObject({ tipo: 'calculado', dineroLibre: 6_000_000, fondos: [] });
+
+    await act(async () => {
+      const r = ejecutar(
+        guardarPresupuestosYFondos(
+          {
+            presupuestos: [
+              { id: IDS_SIEMBRA.presupuestoComida, montoMensual: 700_000 },
+              { id: IDS_SIEMBRA.presupuestoMantenimiento, montoMensual: 400_000 },
+            ],
+            fondos: [
+              { id: IDS_SIEMBRA.fondoEnduro, aporteMensual: 350_000, saldoInicial: { monto: 350_000, fecha: '2026-11-05' } },
+            ],
+          },
+          '2026-11-05',
+        ),
+      );
+      expect(r.ok).toBe(true);
+    });
+
+    const estado = result.current;
+    if (estado.tipo !== 'calculado') throw new Error('se esperaba calculado');
+    expect(estado.presupuestosPendientes.map((p) => [p.fecha, p.monto])).toEqual([
+      ['2026-11-05', 700_000],
+      ['2026-11-05', 400_000],
+      ['2026-12-01', 700_000],
+      ['2026-12-01', 400_000],
+    ]);
+    expect(estado.reservas).toEqual({ anual: 0, fondo: 350_000, total: 350_000 });
+    expect(estado.fondos).toEqual([{ fondoId: IDS_SIEMBRA.fondoEnduro, nombre: 'Fondo enduro', saldo: 350_000 }]);
+    expect(estado.aportesProgramados).toEqual([
+      { fecha: '2026-11-30', tipo: 'fondo', fondoId: IDS_SIEMBRA.fondoEnduro, monto: 350_000 },
+    ]);
+    // Hoy: 10M − 350.000 (fondo) − 1.100.000 (Presupuestos) = 8,55M; es el mínimo.
+    expect(estado.minimo).toEqual({ fecha: '2026-11-05', saldo: 8_550_000 });
+    expect(estado.dineroLibre).toBe(4_550_000);
+
+    await act(async () => {
+      const r = ejecutar(
+        guardarCategoria({
+          id: null,
+          nombre: 'Farmacia',
+          claseDefault: 'esencial',
+          presupuestoId: null,
+          fondoId: null,
+          requiereVehiculo: false,
+        }),
+      );
+      expect(r.ok).toBe(true);
+    });
+    expect(result.current).toEqual(estado);
   });
 });

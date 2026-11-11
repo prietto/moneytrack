@@ -7,6 +7,7 @@ import { hechosVacios } from '@/domain/hechos';
 import { avisarCambio } from './cambios';
 import { obtenerDb } from './db';
 import { crearBaseDePrueba } from './pruebas/base-en-memoria';
+import { hechosSembrados } from './pruebas/hechos-sembrados';
 import { cargarHechos } from './queries/cargar-hechos';
 import { cargarHechosActuales, useHechos } from './use-hechos';
 
@@ -56,7 +57,7 @@ function Consumidor() {
 describe('useHechos', () => {
   it('devuelve los hechos cargados de la base', async () => {
     const { result } = await renderHook(() => useHechos());
-    expect(result.current).toEqual(hechosVacios);
+    expect(result.current).toEqual(hechosSembrados);
     expect(cargarMock).toHaveBeenCalledTimes(1);
     expect(cargarMock).toHaveBeenCalledWith(base.db);
   });
@@ -69,6 +70,9 @@ describe('useHechos', () => {
       pagos: [],
       vehiculos: [],
       obligaciones: [],
+      presupuestos: [],
+      fondos: [],
+      categorias: [],
     };
     cargarMock.mockReturnValueOnce(nuevos);
 
@@ -85,6 +89,9 @@ describe('useHechos', () => {
       pagos: [],
       vehiculos: [],
       obligaciones: [],
+      presupuestos: [],
+      fondos: [],
+      categorias: [],
     };
     let primera = true;
     cargarMock.mockImplementation(() => {
@@ -206,12 +213,12 @@ describe('caché por versión (N+1 cargas)', () => {
       throw new Error('falló una vez');
     });
     expect(() => cargarHechosActuales()).toThrow('falló una vez');
-    expect(cargarHechosActuales()).toEqual(hechosVacios);
+    expect(cargarHechosActuales()).toEqual(hechosSembrados);
     expect(cargarMock).toHaveBeenCalledTimes(2);
   });
 
   it('si hay un cambio durante la carga, esos hechos no quedan como los de la versión nueva', () => {
-    const nuevos = { saldoInicial: null, colchon: 7, pagos: [], vehiculos: [], obligaciones: [] };
+    const nuevos = { ...hechosVacios, colchon: 7 };
     cargarMock.mockImplementationOnce((db) => {
       avisarCambio();
       return jest.requireActual('./queries/cargar-hechos').cargarHechos(db);
@@ -224,7 +231,7 @@ describe('caché por versión (N+1 cargas)', () => {
 
 describe('cargarHechosActuales', () => {
   it('carga los hechos de la base de la app', () => {
-    expect(cargarHechosActuales()).toEqual(hechosVacios);
+    expect(cargarHechosActuales()).toEqual(hechosSembrados);
     expect(cargarMock).toHaveBeenCalledWith(base.db);
   });
 });

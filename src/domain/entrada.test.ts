@@ -1,6 +1,11 @@
 import {
   ANTIGUEDAD_MAXIMA_SALDO_DIAS,
+  type DatosCategoria,
+  type DatosFondo,
   type DatosObligacionAnual,
+  erroresCategoria,
+  erroresFondo,
+  erroresPresupuesto,
   erroresObligacionAnual,
   erroresObligacionMensual,
   erroresPago,
@@ -14,10 +19,14 @@ import {
   normalizarNombre,
   validarObligacionAnual,
   validarObligacionMensual,
+  validarCategoria,
+  validarFondo,
   validarPago,
+  validarPresupuesto,
   validarSaldoYColchon,
   validarVehiculo,
 } from './entrada';
+import { sumarDias } from './fechas';
 
 const HOY = '2026-11-05';
 
@@ -336,5 +345,133 @@ describe('validarObligacionAnual', () => {
       fechaVencimiento: 'fechaAntigua',
       reservaFecha: 'fechaAntigua',
     });
+  });
+});
+
+describe('validarPresupuesto', () => {
+  it.each([0, 700_000, Number.MAX_SAFE_INTEGER])('acepta %p', (montoMensual) => {
+    expect(validarPresupuesto({ montoMensual })).toEqual({ ok: true, valor: { montoMensual } });
+  });
+
+  it.each([null, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])('%p → montoInvalido', (montoMensual) => {
+    expect(validarPresupuesto({ montoMensual })).toEqual({ ok: false, error: 'montoInvalido' });
+    expect(erroresPresupuesto({ montoMensual })).toEqual({ montoMensual: 'montoInvalido' });
+  });
+});
+
+describe('validarFondo', () => {
+  const base: DatosFondo = { aporteMensual: 350_000, saldoMonto: 0, saldoFecha: HOY };
+  const con = (cambios: Partial<DatosFondo>): DatosFondo => ({ ...base, ...cambios });
+
+  it('acepta datos válidos y arma el saldo inicial', () => {
+    expect(validarFondo(base, HOY, null)).toEqual({
+      ok: true,
+      valor: { aporteMensual: 350_000, saldoInicial: { monto: 0, fecha: HOY } },
+    });
+  });
+
+  it.each([
+    [con({ aporteMensual: 0 })],
+    [con({ saldoFecha: sumarDias(HOY, -ANTIGUEDAD_MAXIMA_SALDO_DIAS) })],
+  ])('acepta los bordes %p', (datos) => {
+    expect(validarFondo(datos, HOY, null).ok).toBe(true);
+  });
+
+  it.each([
+    [con({ aporteMensual: -1 }), 'aporteInvalido'],
+    [con({ aporteMensual: null }), 'aporteInvalido'],
+    [con({ aporteMensual: 1.5 }), 'aporteInvalido'],
+    [con({ saldoMonto: -1 }), 'montoInvalido'],
+    [con({ saldoMonto: null }), 'montoInvalido'],
+    [con({ saldoFecha: '2026-02-30' }), 'fechaInvalida'],
+    [con({ saldoFecha: sumarDias(HOY, 1) }), 'fechaFutura'],
+    [con({ saldoFecha: sumarDias(HOY, -ANTIGUEDAD_MAXIMA_SALDO_DIAS - 1) }), 'fechaAntigua'],
+  ])('%p → %p', (datos, error) => {
+    expect(validarFondo(datos, HOY, null)).toEqual({ ok: false, error });
+  });
+
+  it('la fecha guardada se acepta aunque haya envejecido; otra igual de antigua no', () => {
+    const antigua = sumarDias(HOY, -100);
+    expect(validarFondo(con({ saldoFecha: antigua }), HOY, antigua).ok).toBe(true);
+    expect(validarFondo(con({ saldoFecha: sumarDias(antigua, 1) }), HOY, antigua)).toEqual({
+      ok: false,
+      error: 'fechaAntigua',
+    });
+  });
+
+  it('erroresFondo marca cada campo con su error', () => {
+    expect(erroresFondo({ aporteMensual: -1, saldoMonto: null, saldoFecha: 'x' }, HOY, null)).toEqual({
+      aporte: 'aporteInvalido',
+      saldoMonto: 'montoInvalido',
+      saldoFecha: 'fechaInvalida',
+    });
+  });
+});
+
+describe('validarCategoria', () => {
+  const existentes = [
+    { id: 'salud', nombre: 'Salud' },
+    { id: 'sin-registrar', nombre: 'Sin registrar' },
+  ];
+  const presupuestos = [{ id: 'comida' }];
+  const fondos = [{ id: 'enduro' }];
+  const base: DatosCategoria = {
+    nombre: ' Farmacia ',
+    claseDefault: 'esencial',
+    presupuestoId: null,
+    fondoId: null,
+    requiereVehiculo: false,
+  };
+  const con = (cambios: Partial<DatosCategoria>): DatosCategoria => ({ ...base, ...cambios });
+  const validar = (datos: DatosCategoria, idPropio: string | null = null) =>
+    validarCategoria(datos, existentes, idPropio, presupuestos, fondos);
+
+  it('acepta una Esencial sin Presupuesto y normaliza el nombre', () => {
+    expect(validar(base)).toEqual({
+      ok: true,
+      valor: { nombre: 'Farmacia', claseDefault: 'esencial', presupuestoId: null, fondoId: null, requiereVehiculo: false },
+    });
+  });
+
+  it.each([
+    [con({ nombre: 'a'.repeat(40) })],
+    [con({ presupuestoId: 'comida', requiereVehiculo: true })],
+    [con({ claseDefault: 'fondo', fondoId: 'enduro' })],
+    [con({ claseDefault: 'gusto' })],
+  ])('acepta %p', (datos) => {
+    expect(validar(datos).ok).toBe(true);
+  });
+
+  it('editar sin cambiar el nombre no es repetido', () => {
+    expect(validar(con({ nombre: 'Salud' }), 'salud').ok).toBe(true);
+  });
+
+  it.each([
+    [con({ nombre: '  ' }), 'nombreVacio'],
+    [con({ nombre: 'a'.repeat(41) }), 'nombreLargo'],
+    [con({ nombre: '  salud ' }), 'nombreRepetido'],
+    [con({ nombre: 'SIN  REGISTRAR' }), 'nombreRepetido'],
+    [con({ claseDefault: 'otra' as DatosCategoria['claseDefault'] }), 'claseInvalida'],
+    [con({ presupuestoId: 'no-existe' }), 'presupuestoInvalido'],
+    [con({ claseDefault: 'gusto', presupuestoId: 'comida' }), 'presupuestoInvalido'],
+    [con({ claseDefault: 'fondo', presupuestoId: 'comida', fondoId: 'enduro' }), 'presupuestoInvalido'],
+    [con({ claseDefault: 'fondo' }), 'fondoInvalido'],
+    [con({ claseDefault: 'fondo', fondoId: 'no-existe' }), 'fondoInvalido'],
+    [con({ fondoId: 'enduro' }), 'fondoInvalido'],
+    [con({ claseDefault: 'gusto', fondoId: 'enduro' }), 'fondoInvalido'],
+  ])('%p → %p', (datos, error) => {
+    expect(validar(datos)).toEqual({ ok: false, error });
+  });
+
+  it('erroresCategoria marca cada campo con su error', () => {
+    expect(
+      erroresCategoria(
+        { nombre: '', claseDefault: 'gusto', presupuestoId: 'comida', fondoId: 'enduro', requiereVehiculo: false },
+        existentes,
+        null,
+        presupuestos,
+        fondos,
+      ),
+    ).toEqual({ nombre: 'nombreVacio', presupuestoId: 'presupuestoInvalido', fondoId: 'fondoInvalido' });
   });
 });

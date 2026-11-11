@@ -1,7 +1,10 @@
 import type {
+  ErrorCategoria,
+  ErrorFondo,
   ErrorObligacionAnual,
   ErrorObligacionMensual,
   ErrorPago,
+  ErrorPresupuesto,
   ErrorSaldoYColchon,
   ErrorVehiculo,
 } from '@/domain/entrada';
@@ -52,6 +55,25 @@ export const textosConfiguracion = {
   falloAlBorrar: 'No pude borrar. Inténtalo de nuevo.',
   vehiculoEnUso: 'Este Vehículo tiene Obligaciones. Bórralas o quítales el Vehículo antes de borrarlo.',
   noEncontrado: 'Esto ya no existe; quizás se borró.',
+  // Presupuestos esenciales y Fondos protegidos (H1.6).
+  ayudaPresupuesto: 'Lo que gastas al mes en esto. Lo aparto apenas empieza el mes.',
+  ayudaPresupuestoVehiculos: 'Incluye el combustible del mes, además de aceite, pastillas, llantas y repuestos.',
+  aporteFondo: 'Aporte mensual',
+  ayudaAporteFondo: 'Lo que apartas cada mes con tu Pago 2 para esto.',
+  saldoFondo: 'Saldo actual',
+  ayudaSaldoFondo: 'Lo que ya tienes guardado para esto; si no tienes nada, déjalo en 0.',
+  fechaSaldoFondo: 'Fecha del saldo',
+  ayudaFechaSaldoFondo: 'El día en que tenías guardado ese monto. No puede ser futura ni de hace más de dos meses.',
+  // Categorías (H1.6).
+  placeholderCategoria: 'Ej.: Farmacia',
+  clase: 'Clase',
+  presupuesto: 'Presupuesto',
+  sinPresupuesto: 'Sin presupuesto',
+  ayudaSinPresupuesto: 'Resta de tu saldo, pero no sale de ninguna bolsa.',
+  fondo: 'Fondo',
+  pideVehiculo: '¿Pide Vehículo?',
+  si: 'Sí',
+  no: 'No',
   listas: {
     agregarVehiculo: 'Agregar vehículo',
     agregarObligacion: 'Agregar obligación',
@@ -63,6 +85,18 @@ export const textosConfiguracion = {
     resumenMensual: (dia: number, monto: string) => `Día ${dia} · ${monto}`,
     resumenAnual: (fecha: string, monto: string, vehiculo: string | null) =>
       vehiculo === null ? `${fecha} · ${monto}` : `${fecha} · ${monto} · ${vehiculo}`,
+    agregarCategoria: 'Agregar categoría',
+    vacioCategorias: 'Aún no tienes categorías propias. Agrega las que necesites para clasificar tus gastos.',
+    esenciales: 'Esenciales',
+    fondosProtegidos: 'Fondo protegido',
+    gustos: 'Gustos',
+    deLaApp: 'De la app',
+    ayudaDeLaApp: 'La app las usa; no se pueden cambiar ni borrar.',
+    /** Lo que lee el lector de pantalla en una fila de sistema: nombre y resumen. */
+    etiquetaDeLaApp: (nombre: string, resumen: string) => `${nombre}, ${resumen}`,
+    /** Recibe los nombres ya resueltos: clase, y el Presupuesto o Fondo si tiene. */
+    resumenCategoria: (clase: string, enlace: string | null, pideVehiculo: boolean) =>
+      [clase, enlace, pideVehiculo ? 'pide Vehículo' : null].filter((p) => p !== null).join(' · '),
   },
   /** Mensajes de un campo concreto que ganan sobre `errores[codigo]`. */
   erroresVencimiento: {
@@ -70,6 +104,9 @@ export const textosConfiguracion = {
   },
   erroresFechaReserva: {
     fechaAntigua: 'La fecha no puede tener más de dos meses. Usa lo que tenías guardado un día reciente.',
+  },
+  erroresNombreCategoria: {
+    nombreRepetido: 'Ya tienes una categoría con ese nombre.',
   },
   errores: {
     diaInvalido: 'Escribe un día entre 1 y 31.',
@@ -85,8 +122,19 @@ export const textosConfiguracion = {
     vehiculoInvalido: 'Ese vehículo ya no existe; elige otro.',
     reservaInvalida: 'Escribe lo que tienes guardado en pesos, sin decimales; puede ser 0.',
     reservaMayorQueMonto: 'Lo guardado no puede ser más que el monto.',
+    aporteInvalido: 'Escribe el aporte en pesos, sin decimales; puede ser 0.',
+    presupuestoInvalido: 'Ese presupuesto ya no existe o no va con esta clase; elige otro.',
+    fondoInvalido: 'Elige un fondo.',
+    claseInvalida: 'Elige una clase.',
   } satisfies Record<
-    ErrorPago | ErrorSaldoYColchon | ErrorVehiculo | ErrorObligacionMensual | ErrorObligacionAnual,
+    | ErrorPago
+    | ErrorSaldoYColchon
+    | ErrorVehiculo
+    | ErrorObligacionMensual
+    | ErrorObligacionAnual
+    | ErrorPresupuesto
+    | ErrorFondo
+    | ErrorCategoria,
     string
   >,
 } as const;

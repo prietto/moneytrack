@@ -23,6 +23,9 @@ const vacia: Configuracion = {
   colchonSugerido: 4_000_000,
   vehiculos: [],
   obligaciones: [],
+  presupuestos: [],
+  fondos: [],
+  categorias: [],
 };
 
 beforeEach(() => {

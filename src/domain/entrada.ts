@@ -1,4 +1,5 @@
 import { esFechaValida, sumarDias } from './fechas';
+import { CLASES_GASTO, type ClaseGasto } from './hechos';
 import { fallo, ok, type Resultado } from './resultado';
 
 /**
@@ -313,5 +314,141 @@ export function validarObligacionAnual(
     fechaVencimiento: datos.fechaVencimiento,
     vehiculoId: datos.vehiculoId,
     reservaInicial: { monto: datos.reservaMonto as number, fecha: datos.reservaFecha },
+  });
+}
+
+/* --- Presupuesto esencial -------------------------------------------------- */
+
+export type DatosPresupuesto = { montoMensual: number | null };
+export type PresupuestoValido = { montoMensual: number };
+export type ErrorPresupuesto = 'montoInvalido';
+
+/** Error del monto mensual de un Presupuesto: entero seguro ≥ 0 (guardar exige un número). */
+export function erroresPresupuesto(datos: DatosPresupuesto): { montoMensual?: 'montoInvalido' } {
+  return esMonto(datos.montoMensual) ? {} : { montoMensual: 'montoInvalido' };
+}
+
+export function validarPresupuesto(datos: DatosPresupuesto): Resultado<PresupuestoValido, ErrorPresupuesto> {
+  return primero(erroresPresupuesto(datos), { montoMensual: datos.montoMensual as number });
+}
+
+/* --- Fondo protegido ------------------------------------------------------- */
+
+export type DatosFondo = { aporteMensual: number | null; saldoMonto: number | null; saldoFecha: string };
+export type FondoValido = { aporteMensual: number; saldoInicial: { monto: number; fecha: string } };
+export type ErrorFondo = 'aporteInvalido' | 'montoInvalido' | 'fechaInvalida' | 'fechaFutura' | 'fechaAntigua';
+
+type ErroresFondo = {
+  aporte?: 'aporteInvalido';
+  saldoMonto?: 'montoInvalido';
+  saldoFecha?: 'fechaInvalida' | 'fechaFutura' | 'fechaAntigua';
+};
+
+/**
+ * Error de cada campo de un Fondo protegido; vacío si todo es válido. El
+ * aporte y el saldo se aceptan ≥ 0. El saldo inicial es un punto de partida
+ * con fecha (AD-2), con las reglas de la reserva inicial de una Obligación
+ * anual: no futura ni, si es nueva, más antigua que
+ * `ANTIGUEDAD_MAXIMA_SALDO_DIAS`. La `fechaGuardada` se acepta aunque envejezca.
+ */
+export function erroresFondo(datos: DatosFondo, hoy: string, fechaGuardada: string | null): ErroresFondo {
+  const errores: ErroresFondo = {};
+  if (!esMonto(datos.aporteMensual)) errores.aporte = 'aporteInvalido';
+  if (!esMonto(datos.saldoMonto)) errores.saldoMonto = 'montoInvalido';
+  if (!esFechaValida(datos.saldoFecha)) errores.saldoFecha = 'fechaInvalida';
+  else if (datos.saldoFecha > hoy) errores.saldoFecha = 'fechaFutura';
+  else if (datos.saldoFecha !== fechaGuardada && datos.saldoFecha < sumarDias(hoy, -ANTIGUEDAD_MAXIMA_SALDO_DIAS)) {
+    errores.saldoFecha = 'fechaAntigua';
+  }
+  return errores;
+}
+
+export function validarFondo(
+  datos: DatosFondo,
+  hoy: string,
+  fechaGuardada: string | null,
+): Resultado<FondoValido, ErrorFondo> {
+  return primero(erroresFondo(datos, hoy, fechaGuardada), {
+    aporteMensual: datos.aporteMensual as number,
+    saldoInicial: { monto: datos.saldoMonto as number, fecha: datos.saldoFecha },
+  });
+}
+
+/* --- Categoría ------------------------------------------------------------- */
+
+export type DatosCategoria = {
+  nombre: string;
+  claseDefault: ClaseGasto;
+  presupuestoId: string | null;
+  fondoId: string | null;
+  requiereVehiculo: boolean;
+};
+export type CategoriaValida = DatosCategoria;
+export type ErrorCategoria = ErrorNombre | 'nombreRepetido' | 'claseInvalida' | 'presupuestoInvalido' | 'fondoInvalido';
+
+type ErroresCategoria = {
+  nombre?: ErrorNombre | 'nombreRepetido';
+  claseDefault?: 'claseInvalida';
+  presupuestoId?: 'presupuestoInvalido';
+  fondoId?: 'fondoInvalido';
+};
+
+/**
+ * Error de cada campo de una categoría; vacío si todo es válido.
+ *
+ * - El nombre no se repite entre las vigentes, incluidas las de sistema
+ *   (`existentes`); al editar, `idPropio` excluye a la misma categoría.
+ * - Los enlaces son coherentes con la clase: Esencial → un Presupuesto
+ *   vigente o ninguno; Fondo protegido → un Fondo vigente obligatorio;
+ *   Gusto → ninguno.
+ */
+export function erroresCategoria(
+  datos: DatosCategoria,
+  existentes: { id: string; nombre: string }[],
+  idPropio: string | null,
+  presupuestosVigentes: { id: string }[],
+  fondosVigentes: { id: string }[],
+): ErroresCategoria {
+  const errores: ErroresCategoria = {};
+
+  const nombre = errorNombre(datos.nombre);
+  if (nombre) errores.nombre = nombre;
+  else if (existentes.some((c) => c.id !== idPropio && mismoNombre(c.nombre, datos.nombre))) {
+    errores.nombre = 'nombreRepetido';
+  }
+
+  if (!CLASES_GASTO.includes(datos.claseDefault)) errores.claseDefault = 'claseInvalida';
+
+  if (
+    datos.presupuestoId !== null &&
+    (datos.claseDefault !== 'esencial' || !presupuestosVigentes.some((p) => p.id === datos.presupuestoId))
+  ) {
+    errores.presupuestoId = 'presupuestoInvalido';
+  }
+
+  if (datos.claseDefault === 'fondo') {
+    if (datos.fondoId === null || !fondosVigentes.some((f) => f.id === datos.fondoId))
+      errores.fondoId = 'fondoInvalido';
+  } else if (datos.fondoId !== null) {
+    errores.fondoId = 'fondoInvalido';
+  }
+
+  return errores;
+}
+
+/** Devuelve los datos con el nombre normalizado, o el primer error. */
+export function validarCategoria(
+  datos: DatosCategoria,
+  existentes: { id: string; nombre: string }[],
+  idPropio: string | null,
+  presupuestosVigentes: { id: string }[],
+  fondosVigentes: { id: string }[],
+): Resultado<CategoriaValida, ErrorCategoria> {
+  return primero(erroresCategoria(datos, existentes, idPropio, presupuestosVigentes, fondosVigentes), {
+    nombre: normalizarNombre(datos.nombre),
+    claseDefault: datos.claseDefault,
+    presupuestoId: datos.presupuestoId,
+    fondoId: datos.fondoId,
+    requiereVehiculo: datos.requiereVehiculo,
   });
 }

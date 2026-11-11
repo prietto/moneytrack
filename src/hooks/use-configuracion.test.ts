@@ -21,6 +21,9 @@ describe('useConfiguracion', () => {
       colchonSugerido: 4_000_000,
       vehiculos: [],
       obligaciones: [],
+      presupuestos: [],
+      fondos: [],
+      categorias: [],
     });
   });
 
@@ -34,6 +37,19 @@ describe('useConfiguracion', () => {
       ],
       vehiculos: [{ id: 'v1', nombre: 'Moto azul' }],
       obligaciones: [{ id: 'o1', tipo: 'mensual', nombre: 'Arriendo', monto: 1_500_000, dia: 1 }],
+      presupuestos: [{ id: 'pr1', nombre: 'Comida', montoMensual: 700_000 }],
+      fondos: [{ id: 'f1', nombre: 'Fondo enduro', aporteMensual: null, saldoInicial: null }],
+      categorias: [
+        {
+          id: 'c1',
+          nombre: 'Salud',
+          claseDefault: 'esencial',
+          presupuestoId: null,
+          fondoId: null,
+          requiereVehiculo: false,
+          esSistema: false,
+        },
+      ],
     };
     useHechosMock.mockReturnValue(hechos);
     const { result } = await renderHook(() => useConfiguracion());
@@ -45,6 +61,9 @@ describe('useConfiguracion', () => {
       colchonSugerido: 3_000_000,
       vehiculos: hechos.vehiculos,
       obligaciones: hechos.obligaciones,
+      presupuestos: hechos.presupuestos,
+      fondos: hechos.fondos,
+      categorias: hechos.categorias,
     });
   });
 

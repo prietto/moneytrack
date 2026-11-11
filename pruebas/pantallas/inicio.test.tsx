@@ -27,7 +27,9 @@ function calculado(cambios: Partial<Extract<Estado, { tipo: 'calculado' }>> = {}
     pagosAtrasados: [],
     obligacionesPendientes: [],
     obligacionesVencidas: [],
-    reservas: { anual: 0, total: 0 },
+    presupuestosPendientes: [],
+    fondos: [],
+    reservas: { anual: 0, fondo: 0, total: 0 },
     reservasAnuales: [],
     aportesProgramados: [],
     ...cambios,
@@ -135,6 +137,27 @@ describe('pantalla principal', () => {
       expect(screen.getByText(textosInicio.obligacionVencida('Arriendo', '1.500.000', '8 de nov.'))).toBeTruthy();
       // De otro año: con el año.
       expect(screen.getByText(textosInicio.obligacionVencida('Agua', '80.000', '30 de dic. de 2025'))).toBeTruthy();
+    });
+
+    it('con Fondos configurados: una línea con el saldo de cada uno', async () => {
+      useEstadoMock.mockReturnValue(
+        calculado({
+          fondos: [
+            { fondoId: 'f1', nombre: 'Fondo enduro', saldo: 350_000 },
+            { fondoId: 'f2', nombre: 'Fondo viajes', saldo: 0 },
+          ],
+        }),
+      );
+      await render(<Inicio />);
+      expect(screen.getByText(textosInicio.saldoFondo('Fondo enduro', '350.000'))).toBeTruthy();
+      expect(screen.getByText('Fondo enduro: 350.000')).toBeTruthy();
+      expect(screen.getByText('Fondo viajes: 0')).toBeTruthy();
+    });
+
+    it('sin Fondos configurados no muestra ninguna línea de fondo', async () => {
+      useEstadoMock.mockReturnValue(calculado());
+      await render(<Inicio />);
+      expect(screen.queryByText(/Fondo/)).toBeNull();
     });
 
     it('sin Obligaciones vencidas no hay título', async () => {
