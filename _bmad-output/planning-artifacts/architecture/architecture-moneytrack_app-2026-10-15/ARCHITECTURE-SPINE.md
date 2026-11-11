@@ -4,11 +4,11 @@ type: architecture-spine
 purpose: build-substrate
 altitude: feature
 paradigm: 'Núcleo funcional / cáscara imperativa, local-first'
-scope: 'App Android personal MoneyTrack v1 (las 6 funciones del PRD §4 + respaldo en Google Drive)'
+scope: 'App Android personal MoneyTrack v1. MVP (2026-11-11): captura de Gastos con IA (foto, voz, a mano) y resumen del mes; el resto de PRD §4 queda congelado'
 status: final
 created: '2026-10-15'
-updated: '2026-10-22'
-binds: [FR-1..FR-27, PRD §8]
+updated: '2026-11-11'
+binds: [FR-1..FR-27, FR-31..FR-34, PRD §8]
 sources:
   - _bmad-output/planning-artifacts/prds/prd-moneytrack_app-2026-10-14/prd.md
   - _bmad-output/planning-artifacts/prds/prd-moneytrack_app-2026-10-14/addendum.md
@@ -19,6 +19,8 @@ companions:
 # Architecture Spine — MoneyTrack v1
 
 Los términos con mayúscula son los del Glosario del PRD (§3) y se usan igual en código, pruebas e historias.
+
+> **Cambio de rumbo (2026-11-11).** El MVP se reduce a capturar Gastos con IA y ver el resumen del mes ([Sprint Change Proposal](../../sprint-change-proposal-2026-11-11.md)). Cambian AD-1 (nota), AD-11, AD-19 y AD-22. Las decisiones listadas en **Congelado en el MVP** siguen vigentes como diseño, pero ninguna historia del MVP las implementa.
 
 ## Design Paradigm
 
@@ -54,6 +56,7 @@ flowchart TD
 - **Binds:** FR-10, FR-13, FR-16, FR-18, FR-19, FR-20, FR-22, FR-23, todas las pantallas
 - **Prevents:** pantallas o Semáforo que calculan el Dinero libre, las Reservas o el Ritmo de la Meta cada uno a su manera.
 - **Rule:** `domain/` expone `calcularEstado(hechos, hoy): Estado`, que devuelve **todas** las cifras derivadas: Saldo calculado, Reservas por tipo, saldo de cada Deuda, Saldo proyectado por día del Horizonte, Dinero libre (con el día y el monto del mínimo), Meta (o `null`), Día de Libertad, saldos de Fondos protegidos y de Presupuestos esenciales, ocurrencias pendientes y vencidas, y Pagos atrasados. El Semáforo (`evaluarCompra(estado, precio, fondoId?)`, que devuelve `{color, r, dineroLibreResultante, impactoEnDias, comeReservaMeta}`) y `impactoEnDias(estado, monto)` solo leen un `Estado`. Las cifras que pueden faltar datos se devuelven como `{valor, aproximado}`: saldo de Deuda, Avance, Ritmo, Fecha de la Meta proyectada y Día de Libertad. Saldo calculado, Dinero libre e Impacto en días nunca son aproximados. No hay una bandera global. `domain/` es total: no lanza excepciones ante hechos válidos. ESLint lo hace cumplir con `no-restricted-imports` y `no-restricted-globals`/`no-restricted-syntax` para `Date` y `Math.random` en `src/domain/**`. `calcularEstado` con 12 meses de datos tarda < 200 ms (hay una prueba que lo mide).
+- **MVP (2026-11-11):** Inicio no muestra el `Estado` de Dinero libre. Usa la función pura `domain/resumenGastos(gastos, mes)`, que devuelve el total del mes, el gasto por categoría (de mayor a menor) y los últimos Gastos. Sigue la misma regla: pura, total, sin `Date`; las pantallas no suman cifras por su cuenta. `calcularEstado` se conserva para cuando se descongele.
 
 ### AD-2 — Solo se guardan hechos; lo derivado nunca se persiste [ADOPTED]
 
@@ -140,14 +143,18 @@ flowchart TD
 - **Prevents:** reescribir la base el día que haya cuentas o varios dispositivos; choques de ids entre copias.
 - **Rule:** toda tabla tiene `id` UUID v4 generado en el cliente con `expo-crypto` `randomUUID()`, más `createdAt`, `updatedAt` y `deletedAt`. No se usan ids autoincrementales ni claves naturales como clave primaria.
 
-### AD-11 — Extractor de facturas detrás de un contrato único [ADOPTED]
+### AD-11 — Extractor de facturas y notas de voz detrás de un contrato único [ADOPTED]
 
-- **Binds:** FR-7, FR-8; PRD §8 Privacidad, Sin conexión
-- **Prevents:** pantallas acopladas a un proveedor; respuestas con formas distintas; Gastos guardados sin confirmar.
+- **Binds:** FR-7, FR-8, FR-31, FR-32; PRD §8 Privacidad, Sin conexión
+- **Prevents:** pantallas acopladas a un proveedor; respuestas con formas distintas para foto y voz; Gastos guardados sin confirmar; categorías inventadas por la IA.
 - **Rule:**
-  - **Contrato:** `services/extractor` expone `extraerFactura(fotoUri, categorias: {id, nombre}[]): Promise<Resultado<PropuestaGasto>>`, con un único esquema Zod: `monto`, `comercio`, `fecha`, `categoriaId | null`, `claseSugerida` y `vehiculoSugeridoId | null`.
+  - **Contrato:** `services/extractor` expone dos funciones con la misma salida:
+    - `extraerFactura(fotoUri, categorias: {id, nombre}[]): Promise<Resultado<PropuestaGasto>>`
+    - `extraerNotaDeVoz(audioUri, categorias: {id, nombre}[], hoy): Promise<Resultado<PropuestaGasto>>` (`hoy` permite resolver "ayer" o "el lunes").
+  - **Esquema único (Zod):** `PropuestaGasto { monto: entero | null, comercio: string | null, fecha: YYYY-MM-DD | null, categoriaId: string | null, items: {descripcion, monto: entero | null}[] }`. Un `categoriaId` que no está en la lista recibida se convierte en `null`. La Clase no se sugiere: se copia de la categoría al registrar (AD-19).
+  - **Entrada directa:** Gemini recibe la imagen o el audio directamente (sin OCR ni transcripción previa en el celular).
   - **Propuesta, no Gasto:** la salida solo alimenta la pantalla de confirmación. Nunca se guarda como Gasto sin el comando `registrarGasto`.
-  - **Tiempo límite:** a los 10 s aborta con `timeout`; el usuario completa a mano y la foto queda en la cola (AD-22).
+  - **Tiempo límite:** 10 s para la foto y 15 s para la voz; al vencer aborta con `timeout`, el usuario completa a mano y la captura queda en la cola (AD-22).
   - **Proveedor:** vive en un único adaptador. Es `gemini-3.8-flash` con facturación de Cloud activa, porque así no entrena con los datos. El id del modelo es un ajuste del adaptador.
 
 ### AD-12 — Secretos fuera de la base y del respaldo [ADOPTED]
@@ -207,16 +214,18 @@ flowchart TD
 
 ### AD-19 — Forma única del Gasto
 
-- **Binds:** FR-6..FR-10, FR-14, FR-21, FR-22, FR-26
+- **Binds:** FR-6..FR-10, FR-12, FR-14, FR-21, FR-22, FR-26, FR-31, FR-32
 - **Prevents:** Gastos partidos en dos por una historia y enteros por otra; Presupuesto enlazado por FK en una y deducido de la categoría en otra; Gasto sin registrar detectado por nombre.
 - **Rule:**
   - **Una fila por compra:** un Gasto es una fila por compra y nunca se parte. Lleva `clase ∈ {esencial, fondo, gusto}` y, según la clase, `presupuestoId`, `fondoId` u `obligacionPagadaId`.
-  - **Clasificación al registrar:** clase y enlaces se copian de la categoría al registrar, y el usuario puede cambiarlos. Cambiar una categoría después no reclasifica Gastos pasados.
+  - **Clasificación al registrar:** clase y enlaces se copian de la categoría al registrar. En el MVP se copian en silencio y el usuario no los ve ni los cambia (PRD FR-6). Cambiar una categoría después no reclasifica Gastos pasados.
+  - **Nota:** columna opcional `nota` (texto libre).
+  - **Ítems:** tabla `gasto_items {id, gastoId, descripcion, monto?, orden}`, con su propio módulo dueño. Se guardan, editan y borran en la **misma transacción** que su Gasto. Son informativos: el monto del Gasto manda y `domain/` nunca suma ítems para calcular. Si los ítems con monto no suman el total, la pantalla avisa sin bloquear (FR-32).
   - **Lo calcula `domain/`:** consume las bolsas en orden `(fecha, createdAt)`.
     - Lo que excede un Fondo protegido es Gusto, con Impacto en días.
     - Lo que excede un Presupuesto esencial es un **adelanto** (FR-9) que se descuenta del mes siguiente, en cadena.
     - El `Estado` expone, para cada Gasto, la parte cubierta y la desbordada.
-  - **Origen:** `origen ∈ {manual, foto, obligacion, cuadre, semaforo}`. El Gasto sin registrar es exactamente `origen = cuadre`.
+  - **Origen:** `origen ∈ {manual, foto, voz, obligacion, cuadre, semaforo}`. El Gasto sin registrar es exactamente `origen = cuadre`.
 
 ### AD-20 — Periodo, Ritmo y reserva de Meta
 
@@ -241,14 +250,15 @@ flowchart TD
   - **Sin Meta activa:** `Estado.meta = null`, Ritmo y reserva de Meta valen 0, `impactoEnDias` devuelve `null`, y el Semáforo da 🟢 si R ≤ Dinero libre y 🔴 si no. Una Meta **cumplida o vencida** se trata igual para el cálculo hasta que se fije una nueva (decisión 2026-11-04).
   - **Periodos restantes:** Periodos, contando el actual, cuyo último día es ≤ `fechaObjetivo`; mínimo 1 mientras `hoy ≤ fechaObjetivo` (decisión 2026-11-04).
 
-### AD-22 — Cola de fotos en su propia tabla
+### AD-22 — Cola de capturas (foto y voz) en su propia tabla
 
-- **Binds:** FR-7; PRD §8 Sin conexión
-- **Prevents:** "Gastos borrador" que entran al cálculo; cola guardada en memoria por un servicio y en la base por otro.
+- **Binds:** FR-7, FR-31; PRD §8 Sin conexión, Privacidad
+- **Prevents:** "Gastos borrador" que entran al cálculo; cola guardada en memoria por un servicio y en la base por otro; una cola distinta para fotos y para audios.
 - **Rule:**
-  - **Tabla única:** `fotos {id, uri, estado ∈ pendiente|propuesta|confirmada|descartada, propuesta JSON?, gastoId?}` es el único lugar donde vive el estado de la cola. La foto se copia al almacenamiento de la app antes de crear la fila. `calcularEstado` nunca lee `fotos`.
+  - **Tabla única:** `capturas {id, tipo ∈ foto|voz, uri, estado ∈ pendiente|propuesta|confirmada|descartada, propuesta JSON?, gastoId?}` es el único lugar donde vive el estado de la cola. El archivo se copia al almacenamiento de la app antes de crear la fila. `calcularEstado` y `resumenGastos` nunca leen `capturas`.
+  - **Audio efímero:** el archivo de audio se borra al confirmar o descartar la captura; la fila queda sin archivo. La foto se conserva adjunta al Gasto.
   - **Reintentos:** la extracción pendiente se reintenta al abrir la app y al volver la conexión. No hay tareas en segundo plano.
-  - **Extracción tardía:** una extracción que termina sin Gasto aparece en "Facturas por confirmar".
+  - **Extracción tardía:** una extracción que termina sin Gasto aparece en "Por confirmar".
   - **Foto perdida:** un Gasto cuya foto ya no existe (por ejemplo, tras restaurar) se muestra sin foto, sin error.
 
 ### AD-23 — Diagnóstico local
@@ -293,6 +303,7 @@ flowchart TD
 | Expo SDK (`create-expo-app --template default@sdk-57`: TypeScript + Expo Router en `src/app/`; `app.json` → `app.config.ts`) | 57 (expo ≥ 57.0.21) |
 | React Native / React | 0.86 / 19.2 |
 | expo-sqlite, expo-secure-store, expo-notifications, expo-local-authentication, expo-image-picker, expo-file-system, expo-crypto, expo-network | las de SDK 57 vía `npx expo install` (nunca `@next`) |
+| Grabación de audio (nota de voz, FR-31) | el módulo de audio de SDK 57; se verifica con la documentación versionada al crear la historia 4.3 |
 | drizzle-orm / drizzle-kit (driver expo-sqlite; `babel-plugin-inline-import` + `sql` en `sourceExts` de Metro) | 0.45.x / 0.31.x (no la 1.0 rc) |
 | Zod | 4.6.x |
 | @react-native-google-signin/google-signin (módulo Original) + Google Drive REST v3 (`drive.appdata`) | 16.x |
@@ -317,7 +328,7 @@ flowchart LR
     OAUTH["2 clientes OAuth Android (dev, release)"]
     FAD["Firebase App Distribution"]
   end
-  REL -->|"foto → PropuestaGasto"| GEM
+  REL -->|"foto o audio → PropuestaGasto"| GEM
   REL -->|"MoneyTrackExport (variante release)"| DRV
   REL -.-> OAUTH
   DEVAPP -.-> OAUTH
@@ -340,7 +351,8 @@ erDiagram
   PRESUPUESTO_ESENCIAL |o--o{ GASTO : "consume"
   FONDO_PROTEGIDO |o--o{ CATEGORIA : "por defecto"
   PRESUPUESTO_ESENCIAL |o--o{ CATEGORIA : "por defecto"
-  FOTO |o--o| GASTO : "adjunta"
+  CAPTURA |o--o| GASTO : "foto o voz"
+  GASTO ||--o{ GASTO_ITEM : "detalle"
   CUADRE ||--o| GASTO : "Gasto sin registrar"
   CUADRE ||--o| OTRO_INGRESO : "o sobrante"
   CONSULTA_SEMAFORO ||--o| GASTO : "Lo compré"
@@ -369,21 +381,36 @@ moneytrack/
 
 | Capability / Area | Lives in | Governed by |
 | --- | --- | --- |
-| 4.1 Configuración (FR-1..FR-5) | `app/configuracion`, `data/commands` | AD-2, AD-3, AD-5, AD-6, AD-9, AD-12, AD-21 |
-| 4.2 Registro manual (FR-6, FR-8..FR-12) | `app/registro`, `data/commands` | AD-1, AD-3, AD-4, AD-7, AD-19 |
+| 4.1 Configuración (FR-1..FR-5) — congelado | `app/configuracion`, `data/commands` | AD-2, AD-3, AD-5, AD-6, AD-9, AD-12, AD-21 |
+| 4.2 Registro manual (FR-6, FR-8, FR-12, FR-32) | `app/registro`, `data/commands` | AD-1, AD-3, AD-4, AD-7, AD-19 |
 | 4.2 Registro por foto (FR-7) | `services/extractor`, `app/registro` | AD-11, AD-12, AD-22 |
-| 4.3 Dinero libre y Cuadre (FR-13..FR-15) | `domain/`, `app/inicio`, `app/cuadre` | AD-1, AD-2, AD-4, AD-5, AD-19 |
-| 4.4 Meta y Día de Libertad (FR-16..FR-20) | `domain/`, `data/commands/fijar-meta` | AD-1, AD-6, AD-20, AD-21 |
-| 4.5 Semáforo (FR-21..FR-24) | `domain/evaluar-compra`, `app/puedo` | AD-1, AD-2, AD-7, AD-17, AD-19, AD-20 |
-| 4.6 Sesión de pagos (FR-25..FR-27) | `app/sesion-pagos`, `services/notificaciones` | AD-3, AD-5, AD-6, AD-13 |
+| 4.2 Registro por nota de voz (FR-31) | `services/extractor`, `services/audio`, `app/registro` | AD-11, AD-12, AD-22 |
+| Inicio con resumen, lista y detalle (FR-33, FR-34) | `domain/resumen-gastos`, `app/inicio`, `app/gastos` | AD-1 (nota MVP), AD-7, AD-17, AD-19 |
+| 4.3 Dinero libre y Cuadre (FR-13..FR-15) — congelado | `domain/`, `app/inicio`, `app/cuadre` | AD-1, AD-2, AD-4, AD-5, AD-19 |
+| 4.4 Meta y Día de Libertad (FR-16..FR-20) — congelado | `domain/`, `data/commands/fijar-meta` | AD-1, AD-6, AD-20, AD-21 |
+| 4.5 Semáforo (FR-21..FR-24) — congelado | `domain/evaluar-compra`, `app/puedo` | AD-1, AD-2, AD-7, AD-17, AD-19, AD-20 |
+| 4.6 Sesión de pagos (FR-25..FR-27) — congelado | `app/sesion-pagos`, `services/notificaciones` | AD-3, AD-5, AD-6, AD-13 |
 | §8 Privacidad, Respaldo, Sin conexión | `services/` | AD-11, AD-12, AD-14, AD-15, AD-22 |
 | Operación: compilación, distribución, diagnóstico | `app.config.ts`, máquina local, `services/log` | AD-16, AD-23, AD-24 |
 
-El orden de construcción es el del PRD §6.1, con la exportación manual y el respaldo en Drive al final. Si hay atraso, el respaldo en Drive pasa a v1.1 y la exportación manual se queda en v1.
+El orden de construcción es el del PRD §6.1 (MVP): 1.10 → 2.1 → 2.2 → 1.9 → 4.1 → 4.2 → 4.3 → 2.3 → 2.4 → 4.4 → 7.1.
+
+## Congelado en el MVP
+
+Decisiones vigentes como diseño, sin implementación en el MVP (2026-11-11). Se retoman al descongelar sus funciones, sin rehacerlas:
+
+- **AD-5** Ocurrencias, Periodos y bordes de calendario.
+- **AD-6** Amortización francesa.
+- **AD-13** Notificaciones derivadas de los datos.
+- **AD-20** Periodo, Ritmo y reserva de Meta.
+- **AD-21** Metas de solo agregar.
+- **AD-14, parte de respaldo:** respaldo automático en Google Drive y restaurar. La exportación manual a archivo sí está en el MVP.
+
+Lo ya construido sobre AD-5 y la configuración de H1.4–H1.6 queda en el código, oculto en la interfaz.
 
 ## Desvíos aceptados del PRD
 
-- **§8 Privacidad y §8 Respaldo:** además de la foto, sale de forma opcional un respaldo completo a la carpeta privada de Drive del propio usuario, y el respaldo automático entra en v1 (AD-14). Lo decidió el usuario el 2026-10-19. El PRD ya lo refleja (actualizado 2026-10-22).
+- **§8 Privacidad y §8 Respaldo:** el respaldo automático en Drive (AD-14), decidido el 2026-10-19, quedó congelado con el cambio de rumbo del 2026-11-11. En el MVP solo salen la foto o el audio hacia Gemini.
 - **§10.2 y §10.3 resueltas:** el proveedor de IA es Gemini Flash con la clave del usuario y sin backend (AD-11, AD-12). La amortización es el sistema francés (AD-6).
 
 ## Deferred
@@ -394,6 +421,5 @@ El orden de construcción es el del PRD §6.1, con la exportación manual y el r
 - **Fotos en el respaldo:** fuera de v1 por tamaño; se revisa en v1.1.
 - **Reporte remoto de fallos (Crashlytics):** v1 solo tiene diagnóstico local (AD-23).
 - **Migración a Expo SDK 58 y al módulo Universal de google-signin:** después de v1, por la deprecación del SDK de Android que usa el módulo Original.
-- **Lista inicial de categorías (PRD §10.1):** son datos sembrados (AD-9); los define la historia de Configuración.
 - **EAS Update y Play Store:** antes de distribuir a otras personas.
 - **Diseño de pantallas y navegación:** se decide en UX y en las historias.

@@ -1,5 +1,5 @@
 # generated: 2026-11-04
-# last_updated: 2026-11-10
+# last_updated: 2026-11-11
 # project: moneytrack_app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -11,6 +11,7 @@
 #   - backlog: Épica aún no iniciada
 #   - in-progress: Épica en trabajo activo
 #   - done: Todas las historias de la épica completadas
+#   - frozen: Congelada: diseñada, fuera del MVP, retomable sin rehacer
 #
 # Transiciones de Épica:
 #   - backlog → in-progress: Automáticamente al crear la primera historia (vía create-story)
@@ -22,6 +23,7 @@
 #   - in-progress: Desarrollador implementando activamente
 #   - review: Lista para code review (vía workflow code-review del Dev)
 #   - done: Historia completada
+#   - frozen: Congelada: diseñada, fuera del MVP, retomable sin rehacer (create-story la salta)
 #
 # Estado de Retrospectiva:
 #   - optional: Se puede realizar pero no es obligatoria
@@ -39,9 +41,13 @@
 # - El desarrollador normalmente crea la siguiente historia tras terminar la anterior, para incorporar aprendizajes
 # - El Dev mueve la historia a 'review' y luego ejecuta code-review (contexto fresco, idealmente otro LLM)
 # - La retrospectiva agrega sus action items a action_items; sprint-status muestra los abiertos
+#
+# CAMBIO DE RUMBO 2026-11-11 (sprint-change-proposal-2026-11-11.md):
+# MVP = registrar gastos con IA (foto, voz, a mano) + resumen del mes.
+# Orden del MVP: 1-10 → 2-1 → 2-2 → 1-9 → 4-1 → 4-2 → 4-3 → 2-3 → 2-4 → 4-4 → 7-1
 
 generated: 2026-11-04
-last_updated: 2026-11-10
+last_updated: 2026-11-11
 project: moneytrack_app
 project_key: NOKEY
 tracking_system: file-system
@@ -49,7 +55,7 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 
 
 development_status:
-  # Épica 1
+  # Épica 1: base y configuración (se cierra con el MVP)
   epic-1: in-progress
   1-1-proyecto-base-desde-la-plantilla-expo-sdk-57: done
   1-2-acceso-protegido-diagnostico-y-error-amable: done
@@ -57,52 +63,57 @@ development_status:
   1-4-configurar-pagos-saldo-inicial-y-colchon-y-ver-el-primer-dinero-libre: done
   1-5-registrar-vehiculos-y-obligaciones-mensuales-y-anuales: done
   1-6-presupuestos-esenciales-fondo-enduro-y-categorias-iniciales: done
-  1-7-deudas-deuda-objetivo-y-reserva-de-meta: backlog
-  1-8-asistente-de-primer-uso-y-ajustes: backlog
+  1-10-simplificar-la-app-para-el-mvp: backlog
   1-9-apk-release-firmado-e-instalado-en-el-celular: backlog
+  1-7-deudas-deuda-objetivo-y-reserva-de-meta: frozen
+  1-8-asistente-de-primer-uso-y-ajustes: frozen
   epic-1-retrospective: optional
 
-  # Épica 2
+  # Épica 2: Registrar y ver mis gastos
   epic-2: backlog
-  2-1-registrar-un-gasto-manual-en-segundos: backlog
-  2-2-adelanto-de-un-gasto-previsto: backlog
-  2-3-confirmar-pagos-y-registrar-otros-ingresos: backlog
-  2-4-pagar-obligaciones-con-ya-pagamos: backlog
-  2-5-editar-y-borrar-movimientos-con-rastro-visible: backlog
-  2-6-cuadrar-contra-el-banco-e-historial-de-cuadres: backlog
+  2-1-registrar-un-gasto-a-mano: backlog
+  2-2-inicio-con-el-resumen-del-mes: backlog
+  2-3-lista-y-detalle-de-gastos: backlog
+  2-4-editar-y-borrar-gastos-con-rastro-visible: backlog
+  # Congeladas (claves originales)
+  2-2-adelanto-de-un-gasto-previsto: frozen
+  2-3-confirmar-pagos-y-registrar-otros-ingresos: frozen
+  2-4-pagar-obligaciones-con-ya-pagamos: frozen
+  2-6-cuadrar-contra-el-banco-e-historial-de-cuadres: frozen
   epic-2-retrospective: optional
 
-  # Épica 3
-  epic-3: backlog
-  3-1-registrar-abonos-a-una-deuda: backlog
-  3-2-fecha-de-la-meta-proyectada-dia-de-libertad-y-meta-en-la-pantalla-principal: backlog
-  3-3-impacto-en-dias-al-registrar-un-gasto: backlog
-  3-4-ritmo-de-la-meta-y-aviso-al-confirmar-un-pago-o-cuadrar: backlog
-  3-5-meta-cumplida-o-vencida: backlog
+  # Épica 3: congelada
+  epic-3: frozen
+  3-1-registrar-abonos-a-una-deuda: frozen
+  3-2-fecha-de-la-meta-proyectada-dia-de-libertad-y-meta-en-la-pantalla-principal: frozen
+  3-3-impacto-en-dias-al-registrar-un-gasto: frozen
+  3-4-ritmo-de-la-meta-y-aviso-al-confirmar-un-pago-o-cuadrar: frozen
+  3-5-meta-cumplida-o-vencida: frozen
   epic-3-retrospective: optional
 
-  # Épica 4
+  # Épica 4: Registrar gastos con IA
   epic-4: backlog
-  4-1-clave-de-ia-y-extractor-de-facturas: backlog
+  4-1-clave-de-ia-y-extractor: backlog
   4-2-fotografiar-una-factura-y-confirmar-la-propuesta: backlog
-  4-3-fotos-sin-conexion-fallos-y-facturas-por-confirmar: backlog
+  4-3-nota-de-voz-y-confirmar-la-propuesta: backlog
+  4-4-capturas-sin-conexion-fallos-y-por-confirmar: backlog
   epic-4-retrospective: optional
 
-  # Épica 5
-  epic-5: backlog
-  5-1-reglas-del-semaforo-en-el-nucleo: backlog
-  5-2-pantalla-puedo-veredicto-y-lo-compre: backlog
+  # Épica 5: congelada
+  epic-5: frozen
+  5-1-reglas-del-semaforo-en-el-nucleo: frozen
+  5-2-pantalla-puedo-veredicto-y-lo-compre: frozen
   epic-5-retrospective: optional
 
-  # Épica 6
-  epic-6: backlog
-  6-1-sesion-de-pagos-agendada-con-notificacion: backlog
-  6-2-recordatorio-de-cuadre-y-vencimientos-anuales: backlog
+  # Épica 6: congelada
+  epic-6: frozen
+  6-1-sesion-de-pagos-agendada-con-notificacion: frozen
+  6-2-recordatorio-de-cuadre-y-vencimientos-anuales: frozen
   epic-6-retrospective: optional
 
   # Épica 7
   epic-7: backlog
   7-1-exportar-mis-datos-y-el-diagnostico-a-un-archivo: backlog
-  7-2-restaurar-desde-un-archivo: backlog
-  7-3-respaldo-automatico-en-mi-google-drive: backlog
+  7-2-restaurar-desde-un-archivo: frozen
+  7-3-respaldo-automatico-en-mi-google-drive: frozen
   epic-7-retrospective: optional

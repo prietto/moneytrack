@@ -2,7 +2,8 @@
 title: "PRD: MoneyTrack v1"
 status: final
 created: 2026-10-14
-updated: 2026-10-22
+updated: 2026-11-11
+change_proposal: _bmad-output/planning-artifacts/sprint-change-proposal-2026-11-11.md
 source_brief: _bmad-output/planning-artifacts/briefs/brief-moneytrack_app-2026-09-30/brief.md
 ---
 
@@ -12,26 +13,39 @@ source_brief: _bmad-output/planning-artifacts/briefs/brief-moneytrack_app-2026-0
 
 Define qué debe hacer la v1 de MoneyTrack para que la arquitectura, las épicas y las historias se construyan sin adivinar. Parte del [product brief](../../briefs/brief-moneytrack_app-2026-09-30/brief.md) (el porqué, la competencia y la visión no se repiten aquí). Los términos del §3 Glosario se usan exactamente así en todo el documento y en los artefactos que se deriven. Las decisiones técnicas y los ejemplos numéricos viven en [addendum.md](addendum.md). Lo inferido sin confirmar va marcado `[SUPUESTO]` e indexado en el §11.
 
+> **Cambio de rumbo (2026-11-11).** Tras probar H1.1–H1.6 en el celular, la app resultó demasiado compleja para un MVP. El MVP se reenfoca en **registrar gastos con IA (foto, voz o a mano) y ver el resumen del mes**. Lo marcado **Congelado** sigue diseñado y se retoma después sin rehacerlo; lo ya construido de esas funciones (H1.4–H1.6) queda oculto, no borrado. Detalle en el [Sprint Change Proposal](../../sprint-change-proposal-2026-11-11.md).
+
 ## 1. Visión
 
-MoneyTrack es una app Android personal que actúa como socio financiero: registra los Gastos casi sin esfuerzo y responde, en segundos y con honestidad, qué significa cada decisión para la salida de las Deudas. Todo sale de un solo cálculo, el **Dinero libre**, que mira los próximos días y aparta primero lo Esencial, las Reservas y el Colchón.
+MoneyTrack es una app Android personal para **registrar los Gastos sin esfuerzo y saber en qué se va la plata del mes**. Una foto de la factura, una nota de voz o unos toques bastan: la IA propone monto, comercio, fecha, detalle de ítems y categoría, y el usuario solo confirma o corrige.
 
-La v1 tiene un trabajo concreto: ayudar a cumplir la **Meta** —liquidar la Deuda objetivo (~6 millones) antes del 31 de enero de 2027— sin bajar del **Colchón** de 4 millones. Debe estar instalada en el celular a inicios de noviembre de 2026.
+**MVP:** captura inteligente de Gastos (foto, voz, a mano) y un Inicio con el total del mes, el gasto por categoría y los últimos Gastos.
+
+**Después del MVP (congelado):** la app evoluciona hacia el socio financiero original: el **Dinero libre** proyectado (aparta lo Esencial, las Reservas y el Colchón), la **Meta** de liquidar la Deuda objetivo, el Semáforo y la Sesión de pagos.
 
 ## 2. Usuario
 
 ### 2.1 Trabajos por hacer
 
-- **Funcional:** saber en todo momento cuánto tengo libre de verdad, sin hacer cuentas de cabeza.
-- **Funcional:** decidir una compra en segundos sabiendo cuántos días le cuesta a mi Meta.
-- **Funcional:** no olvidar Obligaciones ni vencimientos de mis Vehículos (varias motos y un carro).
+- **Funcional (MVP):** registrar un gasto en segundos —foto, voz o a mano— sin teclear todo.
+- **Funcional (MVP):** ver de un vistazo cuánto llevo gastado este mes y en qué.
+- **Funcional (después del MVP):** saber en todo momento cuánto tengo libre de verdad, sin hacer cuentas de cabeza.
+- **Funcional (después del MVP):** decidir una compra en segundos sabiendo cuántos días le cuesta a mi Meta.
+- **Funcional (después del MVP):** no olvidar Obligaciones ni vencimientos de mis Vehículos (varias motos y un carro).
 - **Emocional:** dormir tranquilo viendo que las Deudas bajan; disfrutar el enduro sin culpa dentro de su fondo.
 
 Usuario único: el autor. No hay otros usuarios en la v1 (ver §5).
 
 ### 2.2 Recorridos clave
 
-- **UJ-1. Priettos registra las pastillas de freno al salir del taller.** Abre la app, toca la cámara y fotografía la factura. La app propone: 85.000 · Taller X · Esencial · Mantenimiento de vehículo · Moto azul. Él confirma con un toque. La app muestra el Dinero libre restante y "no le cuesta días a tu Meta", porque sale del Presupuesto esencial de mantenimiento de vehículos. **Borde:** si la IA lee mal el monto, lo corrige en la misma pantalla antes de guardar.
+**MVP**
+
+- **UJ-1. Priettos registra el mercado con una foto.** Al salir del supermercado abre la app, toca la cámara y fotografía la factura. La app propone: 182.400 · Supermercado X · hoy · Mercado, con el detalle de ítems (arroz 4.200, leche 3.900…). Él confirma con un toque y el Gasto aparece en Inicio. **Borde:** si la IA lee mal el monto o la categoría, lo corrige en la misma pantalla antes de guardar; si los ítems no suman el total, la app lo avisa sin bloquear.
+- **UJ-5. Priettos dicta un gasto.** Sale de almorzar, toca el micrófono y dice "almuerzo en El Corral, treinta y cinco mil". La app propone: 35.000 · El Corral · hoy · Comida afuera. Él confirma. **Borde:** si no entiende el monto, lo deja vacío para que lo escriba; el audio se borra al confirmar o descartar.
+- **UJ-6. Priettos revisa cómo va el mes.** Abre la app y en Inicio ve el total gastado del mes, el gasto por categoría y los últimos Gastos; toca uno para ver su detalle con ítems.
+
+**Después del MVP (congelados)**
+
 - **UJ-2. Priettos duda con unas botas a las 11 p. m.** Abre la app, toca "¿Puedo?", escribe 600.000 y elige el fondo enduro. Recibe 🟡: "350.000 salen de tu fondo enduro; los 250.000 restantes le cuestan 8 días a tu Meta." Decide esperar al Pago de fin de mes; si las hubiera comprado igual, "Lo compré" estaba ahí.
 - **UJ-3. Priettos hace su Sesión de pagos el día 11.** La app le avisa a la hora agendada. Ve la lista de Obligaciones hasta el próximo Pago (cuota bancaria, servicios, arriendo), paga en sus portales y marca cada una "ya pagamos".
 - **UJ-4. Priettos cuadra al llegar el Pago de fin de mes.** Confirma el Pago recibido y la app le pide su Saldo real. Lo escribe; la app calcula 180.000 de diferencia y él los registra como Gasto sin registrar. Ve: "Meta: vas 2,1 de 6 millones; para llegar al 31 de enero necesitas abonar 475.000 este Periodo (ya reservados)". Decide abonar y la Fecha de la Meta proyectada se adelanta.
@@ -42,7 +56,8 @@ Usuario único: el autor. No hay otros usuarios en la v1 (ver §5).
 - **Pago** — Ingreso de salario. La v1 maneja dos por mes, configurables en día y monto esperado: **Pago 1** (~25 %, hacia el día 10) y **Pago 2** (~75 %, fin de mes). Cada Pago se **confirma** con el monto realmente recibido.
 - **Otro ingreso** — Entrada de dinero que no es un Pago (venta, reembolso, ingreso no registrado detectado en un Cuadre).
 - **Periodo** — Tramo entre dos Pagos consecutivos.
-- **Gasto** — Salida de dinero registrada: monto, fecha, categoría, Clase de gasto y, opcionalmente, comercio, Vehículo y foto.
+- **Gasto** — Salida de dinero registrada: monto, fecha, categoría, Clase de gasto, origen (manual, foto o voz) y, opcionalmente, comercio, nota, ítems, foto y Vehículo (este último congelado en el MVP).
+- **Ítem** — Línea del detalle de un Gasto: descripción y monto opcional. Informativo; el monto del Gasto manda.
 - **Clase de gasto** — Una de: **Esencial**, **Fondo protegido** o **Gusto**. Solo el Gusto (y lo que excede un Fondo protegido) tiene Impacto en días, salvo el Gasto sin registrar.
 - **Gusto** — Gasto elegido, no necesario (salidas, comida afuera, compras por impulso). Se paga con Dinero libre.
 - **Esencial** — Gasto necesario. Es una Obligación (arriendo, servicios, cuotas, SOAT…) o consume un Presupuesto esencial.
@@ -79,7 +94,9 @@ Usuario único: el autor. No hay otros usuarios en la v1 (ver §5).
 
 ## 4. Funciones
 
-### 4.1 Configuración inicial
+### 4.1 Configuración inicial — **Congelada**
+
+> Congelada en el MVP. Lo construido (pagos, saldo inicial, Colchón, Vehículos, Obligaciones, Presupuestos esenciales y fondo enduro) queda oculto. En el MVP solo se mantienen las categorías (§4.2, FR-6).
 
 **Descripción:** al primer uso, un asistente corto carga lo mínimo para calcular; todo es editable después.
 
@@ -91,17 +108,21 @@ Usuario único: el autor. No hay otros usuarios en la v1 (ver §5).
 
 ### 4.2 Registro de movimientos
 
-**Descripción:** registrar debe costar segundos; si no, el socio queda ciego. Realiza UJ-1.
+**Descripción:** registrar debe costar segundos; es el corazón del MVP. Realiza UJ-1, UJ-5 y UJ-6.
 
-- **FR-6: Registro manual.** El usuario registra un Gasto con monto, categoría y Clase de gasto; Vehículo y Fondo protegido son opcionales. *Consecuencia:* con una categoría reciente, se completa en ≤ 3 toques tras escribir el monto.
-- **FR-7: Registro por foto.** El usuario fotografía una factura o recibo; la app extrae monto, comercio, fecha y categoría, y sugiere Clase de gasto y Vehículo. *Consecuencias:* siempre hay una pantalla de confirmación editable; nada se guarda sin confirmar; si una categoría de vehículo no trae Vehículo, la app lo pide; si la extracción falla o no hay conexión, la foto queda adjunta y el usuario completa a mano (o se reintenta al volver la conexión). La propuesta aparece en ≤ 10 s con conexión.
+- **FR-6: Registro manual.** El usuario registra un Gasto con monto, categoría, fecha (default hoy) y, opcionalmente, comercio y nota. La Clase de gasto se copia en silencio de la categoría; el usuario no la elige. *Consecuencia:* con una categoría reciente, se completa en ≤ 3 toques tras escribir el monto. *Nota:* la Clase se sigue guardando para que el Dinero libre, al descongelarse, no requiera migrar datos.
+- **FR-7: Registro por foto.** El usuario fotografía una factura o recibo; la IA extrae monto, comercio, fecha y detalle de ítems, y sugiere la categoría. *Consecuencias:* siempre hay una pantalla de confirmación editable; nada se guarda sin confirmar; si la extracción falla o no hay conexión, la foto queda guardada y el usuario completa a mano (o se reintenta al volver la conexión). La propuesta aparece en ≤ 10 s con conexión.
 - **FR-8: Clasificación por defecto.** Mantenimiento y consumibles de Vehículo → Esencial (Presupuesto esencial de mantenimiento de vehículos); equipo y accesorios de enduro → Fondo protegido; el resto → Gusto. El usuario puede cambiarlo.
-- **FR-9: Adelanto de gasto previsto.** Un Gasto Esencial que excede su Presupuesto esencial del mes (p. ej. una llanta en oferta comprada antes de tiempo) se marca como adelanto y el exceso se descuenta del Presupuesto esencial del mes siguiente, no como Gusto.
-- **FR-10: Impacto al guardar.** Tras guardar, la app muestra el Dinero libre restante y, si aplica, el Impacto en días.
-- **FR-11: Confirmar Pago y Otros ingresos.** El usuario confirma cada Pago con el monto recibido y registra Otros ingresos. *Consecuencia:* mientras un Pago no se confirme, el Saldo calculado no lo incluye y el Saldo proyectado lo sigue tratando como esperado.
-- **FR-12: Editar y borrar.** El usuario puede editar o borrar cualquier movimiento; todo se recalcula.
+- **FR-9: Adelanto de gasto previsto.** **[Congelada]** Un Gasto Esencial que excede su Presupuesto esencial del mes (p. ej. una llanta en oferta comprada antes de tiempo) se marca como adelanto y el exceso se descuenta del Presupuesto esencial del mes siguiente, no como Gusto.
+- **FR-10: Impacto al guardar.** **[Congelada]** Tras guardar, la app muestra el Dinero libre restante y, si aplica, el Impacto en días.
+- **FR-11: Confirmar Pago y Otros ingresos.** **[Congelada]** El usuario confirma cada Pago con el monto recibido y registra Otros ingresos. *Consecuencia:* mientras un Pago no se confirme, el Saldo calculado no lo incluye y el Saldo proyectado lo sigue tratando como esperado.
+- **FR-12: Editar y borrar.** El usuario puede editar o borrar cualquier Gasto (incluidos sus ítems); todo se recalcula.
+- **FR-31: Registro por nota de voz.** El usuario graba una nota de voz de hasta 60 s; la IA la interpreta y propone monto, comercio, fecha, ítems y categoría. *Consecuencias:* misma pantalla de confirmación editable que FR-7; nada se guarda sin confirmar; el audio se borra al confirmar o descartar; sin conexión, la nota queda en cola. La propuesta aparece en ≤ 15 s con conexión.
+- **FR-32: Detalle de ítems.** Un Gasto puede tener una lista de ítems (descripción y monto opcional), extraída por la IA o escrita a mano. Los ítems son informativos: el monto del Gasto manda. *Consecuencia:* si los ítems con monto no suman el total, la app lo avisa sin bloquear el guardado.
+- **FR-33: Inicio con el resumen del mes.** La pantalla principal muestra el total gastado en el mes en curso, el gasto por categoría (de mayor a menor) y los últimos Gastos. *Consecuencia:* se actualiza al guardar, editar o borrar un Gasto.
+- **FR-34: Lista y detalle de Gastos.** El usuario ve la lista de Gastos del mes (más reciente primero) y, al tocar uno, su detalle: monto, fecha, comercio, categoría, origen (manual, foto o voz), nota e ítems.
 
-### 4.3 Dinero libre y Cuadre
+### 4.3 Dinero libre y Cuadre — **Congelada**
 
 **Descripción:** la pantalla principal responde "¿cómo voy?" de un vistazo; el Cuadre mantiene la app honesta. Realiza UJ-4.
 
@@ -109,7 +130,7 @@ Usuario único: el autor. No hay otros usuarios en la v1 (ver §5).
 - **FR-14: Cuadre.** El usuario ingresa su Saldo real; la app muestra la diferencia con el Saldo calculado y la registra, con su confirmación, como Gasto sin registrar u Otro ingreso. *Consecuencia:* la app pide un Cuadre al confirmar cada Pago; si no se hace, lo recuerda al día siguiente.
 - **FR-15: Historial de Cuadres.** La app guarda cada Cuadre con su diferencia en monto y porcentaje. Valida SM-2.
 
-### 4.4 Meta y Día de Libertad
+### 4.4 Meta y Día de Libertad — **Congelada**
 
 **Descripción:** la Deuda objetivo se vuelve una cuenta regresiva visible. Realiza UJ-4.
 
@@ -119,7 +140,7 @@ Usuario único: el autor. No hay otros usuarios en la v1 (ver §5).
 - **FR-19: Ritmo y aviso.** Al confirmar un Pago o hacer un Cuadre, la app muestra el Ritmo de la Meta del Periodo, lo ya abonado y "al día" o "atrasado X". *Consecuencia:* si el Ritmo de la Meta no cabe sin bajar del Colchón, lo dice explícitamente.
 - **FR-20: Meta cumplida o vencida.** Al llegar la Deuda objetivo a cero, la app lo celebra y pide elegir la siguiente Deuda objetivo y su fecha; mientras no se elija, el Semáforo muestra color sin Impacto en días. Si pasa la fecha sin cumplirse, la Meta queda "vencida" y la app pide una nueva fecha.
 
-### 4.5 Semáforo de compra
+### 4.5 Semáforo de compra — **Congelada**
 
 **Descripción:** el veredicto antes de comprar, en menos de 5 segundos. Informa; nunca bloquea. Realiza UJ-2.
 
@@ -131,7 +152,7 @@ Usuario único: el autor. No hay otros usuarios en la v1 (ver §5).
 - **FR-23: Respuesta.** El veredicto muestra color, Dinero libre resultante e Impacto en días en una frase simple. *Consecuencia:* desde abrir la app hasta ver el veredicto, ≤ 5 s.
 - **FR-24: Registro de veredictos.** La app guarda cada consulta (fecha, monto, color, si se compró). Permite observar SM-C2.
 
-### 4.6 Sesión de pagos
+### 4.6 Sesión de pagos — **Congelada**
 
 **Descripción:** en lugar de recordatorios sueltos, una cita para pagar todo. Realiza UJ-3.
 
@@ -148,48 +169,67 @@ Usuario único: el autor. No hay otros usuarios en la v1 (ver §5).
 
 ## 6. Alcance de la v1
 
-### 6.1 Dentro (inicios de noviembre de 2026)
+### 6.1 Dentro del MVP (cambio de rumbo 2026-11-11)
 
-Las seis funciones del §4, completas. Decisión del usuario: ninguna se pospone.
+- Registro de Gastos a mano, por foto y por nota de voz, con categoría sugerida por la IA y confirmación obligatoria (FR-6, FR-7, FR-8, FR-31).
+- Detalle de ítems (FR-32).
+- Editar y borrar Gastos (FR-12).
+- Inicio con el resumen del mes, lista y detalle de Gastos (FR-33, FR-34).
+- Categorías editables.
+- Acceso protegido con el bloqueo del teléfono o biometría.
+- APK release instalado en el celular.
+- Exportación manual de los datos a un archivo.
 
-`[NOTA PARA PM]` El plan pasó de 4 a ~3 semanas y arranca desde cero. Orden de construcción sugerido para que un retraso no deje la app inservible: 4.1 → 4.2 (manual) → 4.3 → 4.4 → 4.2 (foto) → 4.5 → 4.6. Con las cuatro primeras ya se puede registrar, cuadrar y seguir la Meta.
+Orden de construcción: simplificar la app → registro a mano → Inicio con resumen → APK → IA (clave y extractor, foto, voz) → lista y detalle → editar y borrar → cola sin conexión → exportar.
 
-### 6.2 Fuera de la v1
+### 6.2 Congelado (diseñado, se retoma después del MVP)
 
-- **v1.1:** nota de voz, consulta por pantallazo, pronóstico de fin de mes, socio-personaje con salud, aprendizaje automático de Vehículo, garaje completo (costo por mes y por km).
+- Funciones 4.1 (configuración inicial, salvo categorías), 4.3 (Dinero libre y Cuadre), 4.4 (Meta y Día de Libertad), 4.5 (Semáforo) y 4.6 (Sesión de pagos).
+- FR-9 a FR-11.
+- Respaldo automático en Google Drive y restaurar desde un archivo.
+- Lo ya construido en H1.4–H1.6 queda oculto en la app, no borrado.
+
+### 6.3 Fuera de la v1
+
+- **v1.1:** consulta por pantallazo, pronóstico de fin de mes, socio-personaje con salud, aprendizaje automático de Vehículo, garaje completo (costo por mes y por km).
 - **Después:** bola de nieve automática, hoja de ruta SHOULD/COULD del brief, búsqueda de precios más baratos, inversiones, conexión bancaria (finanzas abiertas en Colombia no antes de 2027–2028).
 
 ## 7. Métricas de éxito
 
-**Primarias**
+**Primarias (MVP)**
+- **SM-4:** Registrar un Gasto —desde abrir la app hasta guardar— toma ≤ 15 s por foto o por voz. Valida FR-7, FR-31.
+- **SM-5:** ≥ 80 % de los montos propuestos por la IA se guardan sin corrección. Valida FR-7, FR-31.
+- **SM-6:** Gastos registrados al menos 5 días por semana. Señal temprana de abandono. Valida FR-6, FR-7, FR-31.
+
+**Después del MVP (congeladas)**
 - **SM-1:** Deuda objetivo en cero al 31-ene-2027 **sin que el Saldo real baje del Colchón** en ningún Cuadre. Fracaso: no liquidarla, o liquidarla vaciando el Colchón. Valida FR-16 a FR-20.
 - **SM-2:** Diferencia del Cuadre de fin de mes < 5 % del Saldo real, desde noviembre de 2026. Valida FR-6, FR-7, FR-14.
 
-**Secundaria**
 - **SM-3:** Al menos un Cuadre por Periodo (dos al mes). Señal temprana de abandono. Valida FR-14.
 
 **Contra-métricas (no optimizar)**
-- **SM-C1:** Cantidad de Gastos registrados o tiempo en la app. Más uso no es mejor; registrar más rápido sí. Contrapesa SM-3.
-- **SM-C2:** Proporción de veredictos 🟢 del Semáforo (FR-24). Un Semáforo complaciente rompe la honestidad. Contrapesa FR-22.
+- **SM-C1:** Cantidad de Gastos registrados o tiempo en la app. Más uso no es mejor; registrar más rápido sí. Contrapesa SM-6.
+- **SM-C2 (congelada):** Proporción de veredictos 🟢 del Semáforo (FR-24). Un Semáforo complaciente rompe la honestidad. Contrapesa FR-22.
 
 ## 8. Requisitos transversales
 
 - **Voz del socio:** todo texto de la app es honesto, amable y no complaciente. Nunca suaviza un 🔴 ni maquilla una cifra; nunca culpa ni sermonea ("puedes, pero te cuesta 8 días", no "no deberías"); celebra los avances. Lenguaje simple, sin jerga financiera; una mirada basta.
 - **Honestidad del cálculo:** ningún redondeo a favor; si falta un dato (p. ej. tasa), el resultado se marca "aproximado".
-- **Sin conexión:** todo funciona sin internet excepto la extracción por foto, que se encola.
-- **Privacidad:** los datos viven en el celular. Salen solo la foto, al proveedor de IA para extracción (con un proveedor que no entrene con los datos), y, si el usuario lo activa, el respaldo, a la carpeta privada de su propio Google Drive. Acceso con el bloqueo del teléfono o biometría.
-- **Respaldo:** exportación manual de los datos a un archivo y respaldo automático opcional en Google Drive del usuario, ambos en v1. Restaurar reemplaza todos los datos del celular.
+- **Sin conexión:** todo funciona sin internet excepto la extracción por foto y por voz, que se encolan; el registro a mano siempre funciona.
+- **Privacidad:** los datos viven en el celular. Salen solo la foto o el audio, al proveedor de IA para extracción (con un proveedor que no entrene con los datos). El audio se borra del celular al confirmar o descartar. Acceso con el bloqueo del teléfono o biometría.
+- **Respaldo:** en el MVP, solo exportación manual de los datos a un archivo. El respaldo automático en Google Drive y restaurar están congelados.
 - **Moneda y formato:** COP sin decimales, separador de miles con punto.
 
 ## 9. Riesgos
 
 - **El hábito de registrar.** Sin banco conectado, si dejo de registrar, el socio queda ciego. Mitigación de diseño, no de fuerza de voluntad: registro por foto en segundos (FR-7), Cuadre que delata lo no registrado (FR-14) y SM-3 como alarma temprana.
-- **Plazo de 3 semanas con las 6 funciones.** Mitigación: orden de construcción del §6.1.
-- **Lectura errónea de la foto.** Mitigación: confirmación obligatoria antes de guardar (FR-7).
+- **Complejidad que espanta el uso.** La v1 original pedía mucha configuración antes del primer Gasto. Mitigación: MVP reducido a capturar y ver (§6.1); lo demás congelado.
+- **Grabación de audio en Expo SDK 57.** Mitigación: verificar el módulo con la documentación versionada al crear la historia de voz.
+- **Lectura errónea de la foto o la voz.** Mitigación: confirmación obligatoria antes de guardar (FR-7, FR-31) y SM-5 para medirla.
 
 ## 10. Preguntas abiertas
 
-1. Lista inicial de categorías de Gasto (se define en la historia de Configuración).
+Ninguna abierta. La lista inicial de categorías quedó definida en H1.6.
 
 Resueltas en la [arquitectura](../../architecture/architecture-moneytrack_app-2026-10-15/ARCHITECTURE-SPINE.md): proveedor de IA = Gemini Flash con la clave del usuario, sin backend (AD-11, AD-12); amortización = sistema francés con tasa E.A. o M.V. (AD-6).
 
