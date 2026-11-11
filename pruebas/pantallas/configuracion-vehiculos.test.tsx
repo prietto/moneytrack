@@ -162,6 +162,8 @@ describe('formulario de Vehículo', () => {
     await fireEvent.press(screen.getByRole('button', { name: t.siBorrar }));
     await terminarGuardado();
     expect(screen.getByText(t.vehiculoEnUso)).toBeTruthy();
+    expect(screen.queryByText(t.confirmarBorrar('Moto azul'))).toBeNull();
+    expect(screen.queryByRole('button', { name: t.siBorrar })).toBeNull();
     expect(ejecutarMock).not.toHaveBeenCalled();
     expect(router.back).not.toHaveBeenCalled();
   });

@@ -4,7 +4,7 @@ baseline_commit: 8294cd4c92337fa0cfe857cc9086eea1da6c7977
 
 # Story 1.5: Registrar Vehículos y Obligaciones mensuales y anuales
 
-Status: review
+Status: done
 
 <!-- Nota: la validación es opcional. Ejecutar validate-create-story para un control de calidad antes de dev-story. -->
 
@@ -282,6 +282,15 @@ H1.4 dejó Pagos, saldo inicial, Colchón, la navegación base, los formularios 
     8. Re-bloqueo tras más de 5 minutos sobre un formulario.
   - [x] Llena el Dev Agent Record: archivos, desvíos y el resultado de la migración.
 
+### Review Findings
+
+- [x] [Review][Patch] Texto de confirmación "Toca otra vez" no coincide con el control: cambiarlo a "¿Seguro que quieres borrar «{nombre}»?" (decidido en review) [src/textos/configuracion.ts:48]
+- [x] [Review][Patch] Aceptada la desviación 1 (cierres desde `max(ancla, min(f0, fs) + 1)`): corregir el texto del paso 3 de "Algoritmo de la reserva anual" (decidido en review) [_bmad-output/implementation-artifacts/1-5-registrar-vehiculos-y-obligaciones-mensuales-y-anuales.md:311]
+- [x] [Review][Patch] Tras `vehiculoEnUso`, la confirmación de `BotonBorrar` queda abierta con "Sí, borrar" activo y la pregunta "¿Seguro?…" junto al aviso; cada toque solo repite el aviso. Cerrar la confirmación al mostrar el aviso. [src/components/configuracion/formulario-vehiculo.tsx:63]
+- [x] [Review][Defer] Chequeo de Vehículo en uso con datos distintos en pantalla y comando [src/data/commands/borrar-vehiculo.ts:14] — deferred, pre-existing
+- [x] [Review][Defer] Resumen de las filas solo en `accessibilityHint` (patrón heredado de Ajustes de H1.4) [src/components/configuracion/fila.tsx:11] — deferred, pre-existing
+- [x] [Review][Defer] Montos hasta `Number.MAX_SAFE_INTEGER` pueden desbordar sumas del Estado y `formatearDinero` lanza `RangeError` [src/domain/calcular-estado.ts:78] — deferred, pre-existing
+
 ## Dev Notes
 
 ### Qué es y qué no es esta historia
@@ -309,7 +318,7 @@ Para cada Obligación anual `A`, con monto `M`, reserva inicial `r0` en `f0`, an
 
 1. `p = dividirHaciaArriba(M, 12)`.
 2. **Créditos:** las fechas esperadas del Pago 2 en `(f0, hoy+31]` (`ocurrenciasMensuales(pago2.dia, f0 + 1, hoy + 31)`). Usa la fecha **esperada**, aunque el Pago esté atrasado.
-3. **Cierres:** las ocurrencias anuales `o` con `o > f0`, `o ≥ ancla` y `o ≤ hoy+31`.
+3. **Cierres:** las ocurrencias anuales `o` con `o > min(f0, fs)`, `o ≥ ancla` y `o ≤ hoy+31` (es decir, desde `max(ancla, min(f0, fs) + 1)`; corregido en code review, desviación 1). Con `o ≤ fs` también se cumple `o > f0`; si `fs < o ≤ f0`, la ocurrencia es pendiente y libera la reserva sin reiniciarla antes de `f0`.
    - Si `o ≤ fs`, la ocurrencia se **asume pagada**: ya está dentro del saldo inicial. No es pendiente y **reinicia** la reserva a 0 en `o`.
    - Si `o > fs`, es **pendiente**, con `fechaProyectada = max(o, hoy)`, y está vencida si `o < hoy`.
 4. Recorre los eventos en orden de fecha efectiva (crédito: `c`; asumida pagada: `o`; pendiente: `fechaProyectada`). En la misma fecha va primero el crédito, luego el reinicio de una asumida pagada y al final la liberación de una pendiente. Empieza con `R = r0`:

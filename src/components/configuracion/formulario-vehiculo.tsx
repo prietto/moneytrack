@@ -57,12 +57,13 @@ export function FormularioVehiculo({
     });
   }
 
-  function borrar() {
+  function borrar(): boolean | void {
     if (ocupado() || id === null) return;
     setFallo(false);
     if (obligaciones.some((o) => o.tipo === 'anual' && o.vehiculoId === id)) {
       setAviso('vehiculoEnUso');
-      return;
+      // Cierra la confirmación: este borrado no puede seguir.
+      return false;
     }
     setAviso(null);
     setBorrando(true);

@@ -40,3 +40,9 @@
 - `src/components/configuracion/formulario-pagos.tsx:68` y `formulario-saldo-y-colchon.tsx:25`: los formularios toman la configuración una sola vez y no se resincronizan. Revisarlo en el asistente de H1.8.
 - `src/components/configuracion/formulario.tsx:22`: en Android, `KeyboardAvoidingView` va sin `behavior` y con edge-to-edge; verificar en dispositivo que el teclado no tape Guardar.
 - `src/app/(tabs)/ajustes.tsx:16` e `index.tsx`: `router.push` sin guard ante doble toque apila el formulario dos veces.
+
+## Deferred from: code review of 1-5-registrar-vehiculos-y-obligaciones-mensuales-y-anuales (2026-11-10)
+
+- `src/data/commands/borrar-vehiculo.ts:14` y `src/components/configuracion/formulario-vehiculo.tsx:63`: la pantalla busca el Vehículo en uso en los Hechos (que descartan filas incompletas y vuelven `null` los huérfanos) y el comando en las filas vigentes crudas. Una fila incompleta con `vehiculo_id` hace que el comando lance `vehiculoEnUso` y la pantalla muestre el genérico "No pude borrar", sin explicar por qué y sin forma de verla. Hoy no se alcanza (ninguna UI crea filas incompletas); revisarlo en H1.7 con las cuotas, o mapear el error del comando al aviso.
+- `src/components/configuracion/fila.tsx:11` (y `src/app/(tabs)/ajustes.tsx:16`, de H1.4): el resumen (monto, día, Vehículo) va solo en `accessibilityHint`; con las pistas apagadas el lector de pantalla no lo dice, y dos Obligaciones con el mismo nombre suenan iguales. Considerar incluirlo en `accessibilityLabel`.
+- `src/domain/entrada.ts:18` (`leerMonto`, de H1.4) y `src/domain/calcular-estado.ts:78`: cada monto acepta hasta `Number.MAX_SAFE_INTEGER`, pero la suma de varios (reservas, acumulado, Dinero libre) puede pasar de ese límite y `formatearDinero` lanza `RangeError`, que tumba Inicio. Poner un tope de monto realista o validar las sumas.

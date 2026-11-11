@@ -55,8 +55,8 @@ development_status:
   1-2-acceso-protegido-diagnostico-y-error-amable: done
   1-3-nucleo-de-calculo-reloj-hechos-y-estado-reactivo: done
   1-4-configurar-pagos-saldo-inicial-y-colchon-y-ver-el-primer-dinero-libre: done
-  1-5-registrar-vehiculos-y-obligaciones-mensuales-y-anuales: review
-  1-6-presupuestos-esenciales-fondo-enduro-y-categorias-iniciales: backlog
+  1-5-registrar-vehiculos-y-obligaciones-mensuales-y-anuales: done
+  1-6-presupuestos-esenciales-fondo-enduro-y-categorias-iniciales: ready-for-dev
   1-7-deudas-deuda-objetivo-y-reserva-de-meta: backlog
   1-8-asistente-de-primer-uso-y-ajustes: backlog
   1-9-apk-release-firmado-e-instalado-en-el-celular: backlog

@@ -12,7 +12,7 @@ describe('BotonBorrar', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: t.borrar }));
     expect(onBorrar).not.toHaveBeenCalled();
-    expect(screen.getByText('¿Seguro? Toca otra vez para borrar «Moto azul».')).toBeTruthy();
+    expect(screen.getByText('¿Seguro que quieres borrar «Moto azul»?')).toBeTruthy();
     expect(screen.getByRole('button', { name: t.siBorrar })).toBeTruthy();
     expect(screen.getByRole('button', { name: t.cancelar })).toBeTruthy();
   });
@@ -32,6 +32,17 @@ describe('BotonBorrar', () => {
     await fireEvent.press(screen.getByRole('button', { name: t.cancelar }));
     expect(onBorrar).not.toHaveBeenCalled();
     expect(screen.queryByText(t.confirmarBorrar('X'))).toBeNull();
+    expect(screen.getByRole('button', { name: t.borrar })).toBeTruthy();
+  });
+
+  it('si onBorrar devuelve false, cierra la confirmación', async () => {
+    const onBorrar = jest.fn(() => false);
+    await render(<BotonBorrar nombre="X" onBorrar={onBorrar} />);
+    await fireEvent.press(screen.getByRole('button', { name: t.borrar }));
+    await fireEvent.press(screen.getByRole('button', { name: t.siBorrar }));
+    expect(onBorrar).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(t.confirmarBorrar('X'))).toBeNull();
+    expect(screen.queryByRole('button', { name: t.siBorrar })).toBeNull();
     expect(screen.getByRole('button', { name: t.borrar })).toBeTruthy();
   });
 

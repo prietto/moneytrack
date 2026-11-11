@@ -37,6 +37,9 @@ function BotonSecundario({
  * Borrado con confirmación en línea, en dos pasos: el primer toque muestra la
  * pregunta con "Sí, borrar" y "Cancelar". Sin `Alert` ni `Modal`: la capa de
  * bloqueo no tapa las ventanas nativas (diferido de H1.2).
+ *
+ * Si `onBorrar` devuelve `false`, el borrado no procede (p. ej. un Vehículo en
+ * uso) y la confirmación se cierra: la pantalla explica por qué.
  */
 export function BotonBorrar({
   nombre,
@@ -45,7 +48,7 @@ export function BotonBorrar({
   deshabilitado = false,
 }: {
   nombre: string;
-  onBorrar: () => void;
+  onBorrar: () => boolean | void;
   borrando?: boolean;
   deshabilitado?: boolean;
 }) {
@@ -67,7 +70,9 @@ export function BotonBorrar({
       <BotonSecundario
         texto={borrando ? t.borrando : t.siBorrar}
         peligro
-        onPress={onBorrar}
+        onPress={() => {
+          if (onBorrar() === false) setConfirmando(false);
+        }}
         deshabilitado={deshabilitado || borrando}
       />
       <BotonSecundario texto={t.cancelar} onPress={() => setConfirmando(false)} deshabilitado={borrando} />

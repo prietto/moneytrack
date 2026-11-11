@@ -45,7 +45,7 @@ export const textosConfiguracion = {
   fechaReserva: 'Fecha de la reserva',
   ayudaFechaReserva: 'El día en que tenías guardado ese monto. No puede ser futura ni de hace más de dos meses.',
   borrar: 'Borrar',
-  confirmarBorrar: (nombre: string) => `¿Seguro? Toca otra vez para borrar «${nombre}».`,
+  confirmarBorrar: (nombre: string) => `¿Seguro que quieres borrar «${nombre}»?`,
   siBorrar: 'Sí, borrar',
   cancelar: 'Cancelar',
   borrando: 'Borrando…',
