@@ -44,7 +44,7 @@
 #
 # CAMBIO DE RUMBO 2026-11-11 (sprint-change-proposal-2026-11-11.md):
 # MVP = registrar gastos con IA (foto, voz, a mano) + resumen del mes.
-# Orden del MVP: 1-10 → 2-1 → 2-2 → 1-9 → 4-1 → 4-2 → 4-3 → 2-3 → 2-4 → 4-4 → 7-1
+# Orden del MVP: 1-10 → 2-1 → 2-2 → 1-9 → 2-3 → 2-4 → 4-1 → 4-2 → 4-3 → 4-4 → 7-1 (ajustado tras el readiness check)
 
 generated: 2026-11-04
 last_updated: 2026-11-11

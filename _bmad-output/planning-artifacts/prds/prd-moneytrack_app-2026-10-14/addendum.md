@@ -11,9 +11,9 @@ Detalle para arquitectura y pruebas que no pertenece al PRD. Los términos son l
 ## Decisiones y restricciones técnicas conocidas
 
 - **Plataforma:** solo Android (celular del usuario). Datos locales en el dispositivo.
-- **Extracción por foto:** LLM multimodal en la nube (Gemini, Claude u otro) con salida JSON estructurada (monto, comercio, fecha, categoría, Clase de gasto sugerida, Vehículo sugerido). Costo estimado en el brief: del orden de US$0,0003–0,003 por foto con modelos tipo Flash; verificar al elegir. Proveedor con política de no entrenamiento sobre datos de API.
+- **Extracción por foto y por voz (actualizado 2026-11-11):** LLM multimodal en la nube (Gemini, ver AD-11) que recibe la imagen o el audio y devuelve JSON estructurado (`PropuestaGasto`: monto, comercio, fecha, categoría sugerida e ítems). Ya no sugiere Clase de gasto ni Vehículo. Costo estimado en el brief: del orden de US$0,0003–0,003 por foto con modelos tipo Flash; verificar al elegir. Proveedor con política de no entrenamiento sobre datos de API.
 - **Clave de API (resuelto en arquitectura, AD-11/AD-12):** sin backend; el usuario ingresa su clave, que vive en el almacenamiento seguro del celular. Un proxy queda diferido hasta que haya otros usuarios.
-- **Cola sin conexión:** fotos pendientes de extracción se guardan y se reintentan al recuperar conexión (FR-7).
+- **Cola sin conexión:** fotos y notas de voz pendientes de extracción se guardan y se reintentan al recuperar conexión (FR-7, FR-31).
 - **Notificaciones locales:** Sesión de pagos (FR-25), recordatorio de Cuadre (FR-14), vencimientos anuales (FR-27).
 - **Calendario:** día inexistente en el mes → último día del mes (FR-1). Los Pagos no se ajustan por fines de semana: el usuario confirma el Pago real (FR-11).
 - **Futuro, no v1:** QR/CUFE de la factura electrónica DIAN como entrada estructurada; pantallazos de Nequi/Daviplata.

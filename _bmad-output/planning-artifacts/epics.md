@@ -24,7 +24,9 @@ Después de terminar las historias 1.1 a 1.6, Priettos probó la app en su celul
 - **Inicio con resumen:** total del mes, gasto por categoría y últimos gastos. El Dinero libre, los Presupuestos, el fondo enduro, las Obligaciones, los Vehículos, la Meta y el Semáforo son la evolución que viene después del MVP.
 - **Lo ya construido en H1.4 a H1.6 se oculta sin borrarse** (historia 1.10) y se reactiva cuando se descongele.
 
-**Orden del MVP:** 1.10 → 2.1 → 2.2 → 1.9 → 4.1 → 4.2 → 4.3 → 2.3 → 2.4 → 4.4 → 7.1
+**Orden del MVP:** 1.10 → 2.1 → 2.2 → 1.9 → 2.3 → 2.4 → 4.1 → 4.2 → 4.3 → 4.4 → 7.1
+
+*(Ajustado el 2026-11-11 tras el readiness check: 2.3 y 2.4 suben antes de la IA para poder corregir Gastos desde que la app se usa con datos reales en 1.9.)*
 
 | # | Historia | Qué deja usable |
 | --- | --- | --- |
@@ -32,11 +34,11 @@ Después de terminar las historias 1.1 a 1.6, Priettos probó la app en su celul
 | 2 | 2.1 Registrar un Gasto a mano | Ya se puede registrar |
 | 3 | 2.2 Inicio con el resumen del mes | Ya se ve cuánto llevas |
 | 4 | 1.9 APK release en el celular | En el teléfono, en uso diario |
-| 5 | 4.1 Clave de IA y extractor | — |
-| 6 | 4.2 Fotografiar una factura | Captura por foto |
-| 7 | 4.3 Nota de voz | Captura por voz |
-| 8 | 2.3 Lista y detalle de gastos | — |
-| 9 | 2.4 Editar y borrar gastos | — |
+| 5 | 2.3 Lista y detalle de gastos | Ver qué registré |
+| 6 | 2.4 Editar y borrar gastos | Corregir errores con datos reales |
+| 7 | 4.1 Clave de IA y extractor | — |
+| 8 | 4.2 Fotografiar una factura | Captura por foto |
+| 9 | 4.3 Nota de voz | Captura por voz |
 | 10 | 4.4 Capturas sin conexión y por confirmar | — |
 | 11 | 7.1 Exportar | Respaldo manual |
 
@@ -84,7 +86,7 @@ FR5: Vehículos. El usuario registra sus Vehículos con un nombre (p. ej. "Moto 
 
 FR6: Registro manual (simplificado 2026-11-11). El usuario registra un Gasto con monto, fecha, categoría y, opcionalmente, comercio, nota e ítems. La Clase de gasto y los enlaces se copian en silencio de la categoría al Gasto, sin mostrarse. Con una categoría reciente, se completa en ≤ 3 toques tras escribir el monto. *Nota:* la clase se sigue copiando para que, al descongelar los Presupuestos, el fondo y el Dinero libre, los Gastos ya registrados tengan su clasificación sin rehacer nada.
 FR7: Registro por foto (actualizado 2026-11-11). El usuario fotografía una factura o recibo; la app extrae monto, comercio, fecha y el detalle de ítems, y sugiere la categoría. Siempre hay una pantalla de confirmación editable y nada se guarda sin confirmar. Si la extracción falla o no hay conexión, la foto queda adjunta y el usuario completa a mano (o se reintenta al volver la conexión). Con conexión, la propuesta aparece en ≤ 10 s. (Se quitó la sugerencia de Vehículo.)
-FR8: Clasificación por defecto. Mantenimiento y consumibles de Vehículo → Esencial (Presupuesto esencial de mantenimiento de vehículos); equipo y accesorios de enduro → Fondo protegido; el resto → Gusto. El usuario puede cambiarlo.
+FR8: Clasificación por defecto. Mantenimiento y consumibles de Vehículo → Esencial (Presupuesto esencial de mantenimiento de vehículos); equipo y accesorios de enduro → Fondo protegido; el resto → Gusto. En el MVP se aplica en silencio desde la categoría (FR6); las categorías nuevas son Gusto. Cambiarla queda congelado.
 FR9 *(Congelada)*: Adelanto de gasto previsto. Un Gasto Esencial que excede su Presupuesto esencial del mes se marca como adelanto y el exceso se descuenta del Presupuesto esencial del mes siguiente (en cadena), no como Gusto.
 FR10 *(Congelada)*: Impacto al guardar. Tras guardar un Gasto, la app muestra el Dinero libre restante y, si aplica, el Impacto en días.
 FR11 *(Congelada)*: Confirmar Pago y Otros ingresos. El usuario confirma cada Pago con el monto recibido y registra Otros ingresos. Mientras un Pago no se confirme, el Saldo calculado no lo incluye y el Saldo proyectado lo sigue tratando como esperado.
@@ -206,7 +208,7 @@ NFR13: Calidad. Cada historia pasa `npm run verificar` (`tsc --noEmit` + ESLint 
 
 **Orden de construcción (PRD §6.1 + spine)**
 
-- ~~4.1 → 4.2 (manual) → 4.3 → 4.4 → 4.2 (foto) → 4.5 → 4.6 → exportación y respaldo.~~ Reemplazado el 2026-11-11 por el orden del MVP: 1.10 → 2.1 → 2.2 → 1.9 → 4.1 → 4.2 → 4.3 → 2.3 → 2.4 → 4.4 → 7.1 (ver "Alcance del MVP").
+- ~~4.1 → 4.2 (manual) → 4.3 → 4.4 → 4.2 (foto) → 4.5 → 4.6 → exportación y respaldo.~~ Reemplazado el 2026-11-11 por el orden del MVP: 1.10 → 2.1 → 2.2 → 1.9 → 2.3 → 2.4 → 4.1 → 4.2 → 4.3 → 4.4 → 7.1 (ver "Alcance del MVP").
 
 ### UX Design Requirements
 
@@ -215,13 +217,13 @@ No existe un contrato de UX (DESIGN.md/EXPERIENCE.md). El diseño de pantallas y
 UX-DR1: Bloqueo de acceso. Ninguna pantalla con datos se muestra antes de que la biometría o el bloqueo del teléfono tengan éxito. Esto se exige al abrir la app y al volver tras más de 5 minutos.
 UX-DR2 *(Congelada)*: Asistente de configuración inicial. Al primer uso, un asistente corto y por pasos carga Pagos, Deudas y Meta, Obligaciones, Presupuestos, fondo enduro, Colchón, Saldo real inicial y Vehículos. Todo es editable después desde Ajustes.
 UX-DR3 (reescrita 2026-11-11): Inicio con el resumen del mes. Muestra de un vistazo el total gastado en el mes, el gasto por categoría y los últimos gastos, con navegación entre meses. Tiene accesos directos a la foto, a la nota de voz y al registro a mano. No muestra el Dinero libre. *(Versión congelada: pantalla principal "¿cómo voy?" con Dinero libre —en rojo, con el día y el monto del faltante, si es negativo—, Saldo calculado, Avance y Ritmo de la Meta, cuenta regresiva a la Fecha de la Meta proyectada, Día de Libertad, saldo del fondo enduro, Obligaciones vencidas y acceso a "¿Puedo?".)*
-UX-DR4: Registro manual rápido. Se muestran las categorías recientes primero, para completar en ≤ 3 toques tras escribir el monto. La clase y los enlaces se precargan desde la categoría y se pueden cambiar.
+UX-DR4 (ajustada 2026-11-11): Registro manual rápido. Se muestran las categorías recientes primero, para completar en ≤ 3 toques tras escribir el monto. La clase y los enlaces se copian en silencio desde la categoría: no se muestran ni se piden en el MVP.
 UX-DR5 (reescrita 2026-11-11): Pantalla de confirmación de la captura (foto o voz). Muestra la propuesta editable: monto, comercio, fecha, categoría sugerida por la IA e ítems (agregar, editar o quitar). Si la suma de los ítems no cuadra con el total, avisa sin bloquear. Nada se guarda sin confirmar. Hay una vía manual si la extracción falla o vence el tiempo. Existe una bandeja de capturas "Por confirmar".
 UX-DR6 *(Congelada)*: Retroalimentación tras guardar. Después de cada Gasto se muestran el Dinero libre restante y el Impacto en días (o "no le cuesta días a tu Meta").
 UX-DR7 *(Congelada)*: Pantalla "¿Puedo?" (Semáforo). Tiene un campo de precio y un selector opcional de Fondo protegido. El veredicto se muestra con color, una frase simple, el Dinero libre resultante y el Impacto en días. El botón "Lo compré" registra el Gasto con un toque. Todo en ≤ 5 s desde abrir la app.
 UX-DR8 *(Congelada)*: Flujo de confirmar Pago → Cuadre. Al confirmar un Pago, la app pide el Saldo real, muestra la diferencia y la registra con confirmación. Luego muestra el Ritmo de la Meta, lo abonado y "al día" o "atrasado X".
 UX-DR9 *(Congelada)*: Pantalla de Sesión de pagos. Lista las Obligaciones pendientes hasta el próximo Pago, cada una con la acción "ya pagamos" y el monto editable.
-UX-DR10: Rastro visible. Cada movimiento editado o borrado muestra su historia ("editado 15-oct: 850.000 → 85.000"). Hay un aviso si un Gasto tiene fecha anterior al último Cuadre.
+UX-DR10: Rastro visible. Cada movimiento editado o borrado muestra su historia ("editado 15-oct: 850.000 → 85.000"). *(Congelado: el aviso si un Gasto tiene fecha anterior al último Cuadre.)*
 UX-DR11 *(Congelada)*: Celebración y cambio de Meta. Hay una pantalla o modal que celebra la Meta cumplida y pide la nueva Deuda objetivo y su fecha. Para la Meta vencida, pide una nueva fecha.
 UX-DR12 *(Congelada)*: Marcas "aproximado". Toda cifra devuelta con `aproximado = true` se marca visiblemente como aproximada.
 UX-DR13: Error amable. Un ErrorBoundary raíz muestra un mensaje con la Voz del socio y sin detalles técnicos.
@@ -268,7 +270,8 @@ FR34: Épica 2 - Lista y detalle de Gastos (2.3)
 
 ## Epic List
 
-### Epic 1: Configurar mis finanzas y ver mi Dinero libre real
+### Epic 1: Tener la app base, protegida e instalada en mi celular
+*(Antes: "Configurar mis finanzas y ver mi Dinero libre real".)*
 **MVP (2026-11-11):** 1.1–1.6 hechas; entran al MVP la nueva 1.10 (Simplificar la app) y 1.9 (APK). 1.7 y 1.8 quedan Congeladas.
 Priettos instala la app protegida con biometría, hace la configuración inicial (Pagos, Deudas y Deuda objetivo, Obligaciones, Presupuestos esenciales, fondo enduro, Colchón, saldo inicial y Vehículos) y ve en la pantalla principal su Dinero libre honesto para los próximos 31 días. La épica incluye el proyecto base (plantilla Expo SDK 57, stack, ESLint, `npm run verificar` y las variantes dev/release), el núcleo `calcularEstado` con la prueba fija de Dinero libre = 1.350.000, la lista inicial de categorías, el bloqueo de acceso, el log, el ErrorBoundary, la firma del APK y su distribución, de modo que el APK release quede instalado en el celular.
 **FRs covered:** FR1, FR2, FR3, FR4, FR5, FR13 (parte base), FR18 (reserva de Meta en el cálculo); en el MVP, FR33 (Inicio sin Dinero libre, vía 1.10)
@@ -301,7 +304,9 @@ Priettos exporta sus datos a un archivo, activa el respaldo automático en su Go
 **FRs covered:** FR28; *Congelados:* FR29, FR30
 
 
-## Epic 1: Configurar mis finanzas y ver mi Dinero libre real
+## Epic 1: Tener la app base, protegida e instalada en mi celular
+
+*(Antes: "Configurar mis finanzas y ver mi Dinero libre real"; renombrada el 2026-11-11. La configuración financiera de 1.4–1.6 queda hecha y oculta.)*
 
 Priettos instala la app protegida con biometría, carga su configuración y ve en la pantalla principal un Dinero libre honesto para los próximos 31 días: descuenta Obligaciones, Presupuestos esenciales, Reservas (incluida la de Meta) y el Colchón. La épica termina con el APK release instalado en su celular.
 
@@ -612,7 +617,7 @@ para empezar a usar la app en minutos sin olvidar ningún dato.
 
 ### Story 1.9: APK release firmado e instalado en el celular
 
-> **MVP (2026-11-11):** cuarta del orden del MVP, después de 2.2, para usar la app a diario mientras se construye la IA.
+> **MVP (2026-11-11):** cuarta del orden del MVP, después de 2.2, para usar la app a diario mientras se construye el resto.
 
 Como Priettos,
 quiero un APK release firmado que se instale y actualice en mi celular,
@@ -660,6 +665,13 @@ para entenderla de un vistazo y concentrarme en registrar mis gastos.
 **Then** ninguna tiene entrada en la navegación ni acceso desde Inicio o Ajustes
 **And** siguen en el código sin borrarse, igual que sus tablas, comandos, siembra y datos ya guardados, para reactivarlas cuando se descongelen
 
+**Given** Ajustes → Categorías (pantallas de la historia 1.6)
+**When** Priettos ve la lista o crea o edita una categoría
+**Then** la lista muestra solo los nombres, sin clase, Presupuesto, Fondo ni "pide Vehículo"
+**And** el formulario pide solo el nombre; una categoría nueva se guarda con `claseDefault = gusto`, sin `presupuestoId`, sin `fondoId` y con `requiereVehiculo = false`
+**And** editar el nombre de una categoría existente conserva su clase y sus enlaces
+**And** las categorías de sistema siguen sin poder borrarse
+
 **Given** Inicio
 **When** se abre
 **Then** no muestra el Dinero libre, el Saldo calculado ni el estado vacío "sin configurar" que llevaba al asistente o a Ajustes
@@ -691,6 +703,7 @@ para que registrar me cueste segundos y no se me escape ningún gasto.
 
 **Given** la tabla `gastos`, con una fila por compra que nunca se parte: `monto`, `fecha`, `categoriaId`, `clase ∈ {esencial, fondo, gusto}`, `presupuestoId?`, `fondoId?`, `obligacionPagadaId?`, `vehiculoId?`, `comercio?`, `nota?` y `origen ∈ {manual, foto, voz, obligacion, cuadre, semaforo}`
 **And** la tabla `gasto_items {id, gastoId, descripcion, monto?, orden}`
+**And** las columnas de funciones congeladas (`presupuestoId`, `fondoId`, `obligacionPagadaId`, `vehiculoId`) se crean desde ya, a propósito, para no migrar al descongelar (AD-19)
 **When** Priettos registra un Gasto desde Inicio
 **Then** el comando `registrarGasto` guarda el Gasto y sus ítems en una sola transacción, con `origen = manual`
 **And** la fecha por defecto es `useHoy()` y se puede cambiar
@@ -728,7 +741,7 @@ para saber en qué se me va la plata sin hacer cuentas.
 
 **Given** `domain/`
 **When** se llama la función pura `resumenGastos(gastos, mes)` con `mes` en formato `YYYY-MM`
-**Then** devuelve el total del mes, el total por categoría (de mayor a menor) y los últimos gastos del mes, ordenados por `(fecha, createdAt)` descendente
+**Then** devuelve el total del mes, el total por categoría (de mayor a menor) y los últimos 5 gastos del mes, ordenados por `(fecha, createdAt)` descendente
 **And** solo cuenta los Gastos de ese mes y no usa `Date` ni dependencias fuera de `domain/`
 
 **Given** Inicio
@@ -736,6 +749,7 @@ para saber en qué se me va la plata sin hacer cuentas.
 **Then** muestra el total del mes, el gasto por categoría y los últimos gastos, con montos de `formatearDinero()`
 **And** tiene accesos directos al registro a mano y, cuando su función exista, a la foto (4.2) y a la nota de voz (4.3)
 **And** se puede navegar al mes anterior y al siguiente
+**And** cuando exista la lista y el detalle (2.3), tocar uno de los últimos gastos abre su detalle y hay un acceso a "Ver todos"
 
 **Given** un Gasto registrado, editado o borrado
 **When** termina el comando
@@ -1232,9 +1246,18 @@ para registrar un Gasto al salir del taller en segundos.
 **Then** la fila pasa a `estado = propuesta`, guarda la propuesta en JSON y la pantalla de confirmación aparece en ≤ 10 s desde la foto
 **And** la pantalla muestra monto, comercio, fecha, la categoría sugerida por la IA y los ítems, todos editables (se pueden agregar, editar o quitar ítems)
 
+**Given** una captura de foto
+**When** la extracción falla (sin conexión, timeout, respuesta inválida o sin clave)
+**Then** la app lo dice con la Voz del socio y abre el registro a mano con la foto adjunta, sin perder la foto
+**And** la captura queda en `estado = pendiente` (los reintentos y la bandeja "Por confirmar" llegan en 4.4)
+
 **Given** la pantalla de confirmación
 **When** la suma de los montos de los ítems no cuadra con el total
 **Then** la app avisa sin bloquear la confirmación
+
+**Given** una propuesta con `monto = null`
+**When** Priettos intenta confirmar
+**Then** la app le pide el monto antes de guardar
 
 **Given** la pantalla de confirmación
 **When** Priettos confirma
@@ -1258,19 +1281,31 @@ para registrar sin escribir cuando no tengo factura.
 
 **Acceptance Criteria:**
 
-**Given** el módulo de grabación de audio
-**When** se crea esta historia
-**Then** el módulo de audio de Expo SDK 57 se elige verificando la documentación versionada (`https://docs.expo.dev/versions/v57.0.0/`) y se instala con `npx expo install`
-**And** la app pide el permiso de micrófono la primera vez y, si se niega, sigue funcionando con la foto y el registro a mano
+> **Nota para create-story:** el módulo de audio de Expo SDK 57 se elige verificando la documentación versionada (`https://docs.expo.dev/versions/v57.0.0/`) y se instala con `npx expo install`.
+
+**Given** la grabación de voz
+**When** se revisan las dependencias
+**Then** usa un módulo de audio de Expo SDK 57 instalado con `npx expo install`
+
+**Given** la primera vez que Priettos toca el botón de voz
+**When** la app pide el permiso de micrófono y él lo niega
+**Then** la app lo explica con la Voz del socio y sigue funcionando con la foto y el registro a mano
 
 **Given** Inicio
 **When** Priettos toca el botón de voz y graba
-**Then** la grabación se detiene sola a los 60 s como máximo
-**And** el audio se copia al almacenamiento de la app y se crea una fila en `capturas {id, tipo = voz, uri, estado = pendiente}` antes de extraer
+**Then** ve que está grabando y el tiempo restante, y puede detener o cancelar
+**And** la grabación se detiene sola a los 60 s como máximo
+**And** si cancela, no se crea captura y el audio se borra
+**And** al detener, el audio se copia al almacenamiento de la app y se crea una fila en `capturas {id, tipo = voz, uri, estado = pendiente}` antes de extraer
 
 **Given** una captura de voz pendiente con conexión
 **When** `extraerNotaDeVoz` termina bien
 **Then** la propuesta aparece en ≤ 15 s en la misma pantalla de confirmación de 4.2, con monto, comercio, fecha, categoría sugerida e ítems editables
+**And** si la IA no entendió el monto (`monto = null`), la confirmación lo pide antes de guardar
+
+**Given** una captura de voz
+**When** la extracción falla (sin conexión, timeout, respuesta inválida o sin clave)
+**Then** la app lo dice con la Voz del socio y abre el registro a mano; la captura queda `pendiente` con su audio para reintentar en 4.4
 
 **Given** la pantalla de confirmación de una nota de voz
 **When** Priettos confirma
@@ -1482,7 +1517,7 @@ para no depender de un solo celular.
 
 **Given** el archivo exportado
 **When** se inspecciona
-**Then** contiene todas las tablas, incluidas las filas borradas, el `rastro` y las instantáneas (Cuadres y consultas del Semáforo)
+**Then** contiene todas las tablas existentes, incluidas las filas borradas y el `rastro`
 **And** no contiene secretos (clave de IA, tokens) ni fotos
 
 **Given** Ajustes

@@ -73,7 +73,7 @@ Los presupuestos, el fondo enduro, las obligaciones, los vehículos y la proyecc
 - **Riesgo:** bajo. No se borra código; la IA ya tenía su decisión de arquitectura; el único riesgo nuevo es la grabación de audio.
 - **Cronograma:** el valor llega antes. La primera captura con IA ocurre en la historia 6 del orden (4.2), en vez de esperar a la épica 4 completa.
 
-**Orden del MVP:** 1.10 → 2.1 → 2.2 → 1.9 → 4.1 → 4.2 → 4.3 → 2.3 → 2.4 → 4.4 → 7.1
+**Orden del MVP:** 1.10 → 2.1 → 2.2 → 1.9 → 2.3 → 2.4 → 4.1 → 4.2 → 4.3 → 4.4 → 7.1 *(ajustado tras el readiness check del 2026-11-11: editar y borrar antes de la IA)*
 
 ## 4. Cambios detallados (aprobados uno por uno)
 

@@ -112,7 +112,7 @@ Usuario único: el autor. No hay otros usuarios en la v1 (ver §5).
 
 - **FR-6: Registro manual.** El usuario registra un Gasto con monto, categoría, fecha (default hoy) y, opcionalmente, comercio y nota. La Clase de gasto se copia en silencio de la categoría; el usuario no la elige. *Consecuencia:* con una categoría reciente, se completa en ≤ 3 toques tras escribir el monto. *Nota:* la Clase se sigue guardando para que el Dinero libre, al descongelarse, no requiera migrar datos.
 - **FR-7: Registro por foto.** El usuario fotografía una factura o recibo; la IA extrae monto, comercio, fecha y detalle de ítems, y sugiere la categoría. *Consecuencias:* siempre hay una pantalla de confirmación editable; nada se guarda sin confirmar; si la extracción falla o no hay conexión, la foto queda guardada y el usuario completa a mano (o se reintenta al volver la conexión). La propuesta aparece en ≤ 10 s con conexión.
-- **FR-8: Clasificación por defecto.** Mantenimiento y consumibles de Vehículo → Esencial (Presupuesto esencial de mantenimiento de vehículos); equipo y accesorios de enduro → Fondo protegido; el resto → Gusto. El usuario puede cambiarlo.
+- **FR-8: Clasificación por defecto.** Mantenimiento y consumibles de Vehículo → Esencial (Presupuesto esencial de mantenimiento de vehículos); equipo y accesorios de enduro → Fondo protegido; el resto → Gusto. En el MVP se aplica en silencio desde la categoría (FR-6) y las categorías nuevas son Gusto; que el usuario la cambie queda congelado.
 - **FR-9: Adelanto de gasto previsto.** **[Congelada]** Un Gasto Esencial que excede su Presupuesto esencial del mes (p. ej. una llanta en oferta comprada antes de tiempo) se marca como adelanto y el exceso se descuenta del Presupuesto esencial del mes siguiente, no como Gusto.
 - **FR-10: Impacto al guardar.** **[Congelada]** Tras guardar, la app muestra el Dinero libre restante y, si aplica, el Impacto en días.
 - **FR-11: Confirmar Pago y Otros ingresos.** **[Congelada]** El usuario confirma cada Pago con el monto recibido y registra Otros ingresos. *Consecuencia:* mientras un Pago no se confirme, el Saldo calculado no lo incluye y el Saldo proyectado lo sigue tratando como esperado.
@@ -120,6 +120,8 @@ Usuario único: el autor. No hay otros usuarios en la v1 (ver §5).
 - **FR-31: Registro por nota de voz.** El usuario graba una nota de voz de hasta 60 s; la IA la interpreta y propone monto, comercio, fecha, ítems y categoría. *Consecuencias:* misma pantalla de confirmación editable que FR-7; nada se guarda sin confirmar; el audio se borra al confirmar o descartar; sin conexión, la nota queda en cola. La propuesta aparece en ≤ 15 s con conexión.
 - **FR-32: Detalle de ítems.** Un Gasto puede tener una lista de ítems (descripción y monto opcional), extraída por la IA o escrita a mano. Los ítems son informativos: el monto del Gasto manda. *Consecuencia:* si los ítems con monto no suman el total, la app lo avisa sin bloquear el guardado.
 - **FR-33: Inicio con el resumen del mes.** La pantalla principal muestra el total gastado en el mes en curso, el gasto por categoría (de mayor a menor) y los últimos Gastos. *Consecuencia:* se actualiza al guardar, editar o borrar un Gasto.
+> FR-28 a FR-30 (exportar, respaldo en Drive y restaurar) se derivan de §8 y están numeradas en el documento de épicas.
+
 - **FR-34: Lista y detalle de Gastos.** El usuario ve la lista de Gastos del mes (más reciente primero) y, al tocar uno, su detalle: monto, fecha, comercio, categoría, origen (manual, foto o voz), nota e ítems.
 
 ### 4.3 Dinero libre y Cuadre — **Congelada**
@@ -180,7 +182,7 @@ Usuario único: el autor. No hay otros usuarios en la v1 (ver §5).
 - APK release instalado en el celular.
 - Exportación manual de los datos a un archivo.
 
-Orden de construcción: simplificar la app → registro a mano → Inicio con resumen → APK → IA (clave y extractor, foto, voz) → lista y detalle → editar y borrar → cola sin conexión → exportar.
+Orden de construcción: simplificar la app → registro a mano → Inicio con resumen → APK → lista y detalle → editar y borrar → IA (clave y extractor, foto, voz) → cola sin conexión → exportar.
 
 ### 6.2 Congelado (diseñado, se retoma después del MVP)
 
@@ -198,7 +200,7 @@ Orden de construcción: simplificar la app → registro a mano → Inicio con re
 
 **Primarias (MVP)**
 - **SM-4:** Registrar un Gasto —desde abrir la app hasta guardar— toma ≤ 15 s por foto o por voz. Valida FR-7, FR-31.
-- **SM-5:** ≥ 80 % de los montos propuestos por la IA se guardan sin corrección. Valida FR-7, FR-31.
+- **SM-5:** ≥ 80 % de los montos propuestos por la IA se guardan sin corrección. Se mide comparando `capturas.propuesta` con el Gasto enlazado por `gastoId`. Valida FR-7, FR-31.
 - **SM-6:** Gastos registrados al menos 5 días por semana. Señal temprana de abandono. Valida FR-6, FR-7, FR-31.
 
 **Después del MVP (congeladas)**

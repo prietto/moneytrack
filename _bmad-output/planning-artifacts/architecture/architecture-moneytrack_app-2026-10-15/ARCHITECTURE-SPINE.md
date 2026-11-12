@@ -373,7 +373,7 @@ moneytrack/
       tablas/            # un módulo dueño por tabla (AD-3)
       commands/          # únicas transacciones de escritura
       queries/           # cargar-hechos.ts (AD-18)
-    services/            # reloj, extractor, notificaciones, respaldo, biometria, log
+    services/            # reloj, extractor, audio, notificaciones, respaldo, biometria, log
     textos/              # voz del socio (AD-17)
 ```
 
@@ -393,7 +393,7 @@ moneytrack/
 | §8 Privacidad, Respaldo, Sin conexión | `services/` | AD-11, AD-12, AD-14, AD-15, AD-22 |
 | Operación: compilación, distribución, diagnóstico | `app.config.ts`, máquina local, `services/log` | AD-16, AD-23, AD-24 |
 
-El orden de construcción es el del PRD §6.1 (MVP): 1.10 → 2.1 → 2.2 → 1.9 → 4.1 → 4.2 → 4.3 → 2.3 → 2.4 → 4.4 → 7.1.
+El orden de construcción es el del PRD §6.1 (MVP): 1.10 → 2.1 → 2.2 → 1.9 → 2.3 → 2.4 → 4.1 → 4.2 → 4.3 → 4.4 → 7.1.
 
 ## Congelado en el MVP
 
